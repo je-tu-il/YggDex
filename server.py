@@ -198,6 +198,22 @@ class SearchHandler(BaseHTTPRequestHandler):
                     self.send_error(404, "index.html introuvable")
                 return
 
+            elif path in ("/studio", "/studio.html"):
+                studio_file = os.path.join(SCRIPT_DIR, "studio.html")
+                if not os.path.exists(studio_file):
+                    studio_file = os.path.join(SCRIPT_DIR, "docs", "studio.html")
+                if os.path.exists(studio_file):
+                    with open(studio_file, "rb") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+                else:
+                    self.send_error(404, "studio.html introuvable")
+                return
+
             elif path == "/api/torrent-studio/status":
                 running = is_studio_alive()
                 self.send_json({

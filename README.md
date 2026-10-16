@@ -17,10 +17,11 @@
 
 Pour télécharger les fichiers à partir des liens magnets ou `.torrent` fournis par YggDex, vous avez besoin d'un client BitTorrent :
 
-| Client Torrent | Type | Description | Téléchargement |
+| Client Torrent | Type | Description | Téléchargement / Accès |
 | :--- | :--- | :--- | :--- |
 | **qBittorrent** *(Recommandé)* | Open-Source & Gratuit | Sans pub, ultra-complet, support DHT/PeX optimal, gestionnaire de vitesse et lecteur séquentiel. | [👉 Télécharger qBittorrent](https://www.qbittorrent.org/download) |
-| **Torrent Studio** | Application Dédiée | Intégration directe en 1 clic avec YggDex (démarrage automatique en tâche de fond + envoi direct du magnet). | Déjà configuré si installé sur votre machine |
+| **Torrent Studio Web** | Client Web Dégradé | Version 100% web dans le navigateur via WebTorrent (torrent pré-sélectionné, suivi live du téléchargement). | [⚡ Accéder à Torrent Studio Web](https://je-tu-il.github.io/YggDex/studio.html) |
+| **Torrent Studio Desktop** | Application Dédiée | Intégration directe en 1 clic avec YggDex (démarrage automatique en tâche de fond + envoi direct du magnet). | Déjà configuré si installé sur votre machine |
 | **Transmission** | Minimaliste & Léger | Client épuré, très faible consommation de ressources RAM/CPU. | [👉 Télécharger Transmission](https://transmissionbt.com/download) |
 
 ---
@@ -131,12 +132,14 @@ YggDex/
 ├── Lancer_YggDex.bat        # Lanceur rapide Windows (Port 7777)
 ├── server.py                # Serveur HTTP local multithreadé + Pont Torrent Studio
 ├── index.html               # Application Web locale avec affiches, filtres et liens magnets
+├── studio.html              # Torrent Studio Web Edition (local)
 ├── database/                # Base SQLite découpée pour respecter la limite GitHub (< 100 Mo)
 │   ├── ygg_db.part01        # Partie 1 (95 Mo)
 │   ├── ygg_db.part02        # Partie 2 (95 Mo)
 │   └── ygg_db.part03        # Partie 3 (78 Mo)
 └── docs/                    # Version Web autonome pour GitHub Pages
     ├── index.html           # Interface Web avec passerelle localhost & liens client torrent
+    ├── studio.html          # Torrent Studio Web Edition (WebTorrent in-browser)
     └── demo_torrents.json   # Échantillon de démonstration autonome
 ```
 

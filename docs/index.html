@@ -514,6 +514,42 @@
       border: 1px solid transparent;
       transition: all 0.15s;
     }
+    .studio-link-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    }
+    .studio-link-header:hover {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      transform: translateY(-1px);
+    }
+    .btn-studio {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      font-weight: 700;
+    }
+    .btn-studio:hover {
+      background: linear-gradient(135deg, #047857, #059669);
+    }
+    .btn-studio-lg {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+    .btn-studio-lg:hover {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      transform: translateY(-1px);
+    }
     .btn-magnet {
       background: #065f46;
       color: #a7f3d0;
@@ -1011,6 +1047,11 @@
       </div>
 
       <div class="header-right">
+        <a href="studio.html" class="studio-link-header" title="Ouvrir le gestionnaire Torrent Studio Web">
+          <span>⚡</span>
+          <span>Torrent Studio</span>
+        </a>
+
         <a href="https://www.qbittorrent.org/download" target="_blank" rel="noopener noreferrer" class="client-link" title="Télécharger un client torrent recommandé (qBittorrent - gratuit & sans pub)">
           <span>📥</span>
           <span>Client Torrent</span>
@@ -1104,6 +1145,9 @@
             </div>
 
             <div class="modal-download-actions">
+              <a id="modalStudioBtn" href="#" target="_blank" class="btn btn-studio-lg" title="Lancer dans Torrent Studio Web avec torrent pré-sélectionné">
+                <span>⚡</span> Télécharger avec Torrent Studio Web
+              </a>
               <a id="modalMagnetBtn" href="#" class="btn btn-magnet-lg">
                 <span>🧲</span> Télécharger le Magnet
               </a>
@@ -1435,11 +1479,11 @@
               </div>
               
               <div class="grid-actions-row">
+                <a class="btn btn-studio" href="studio.html?magnet=${encodeURIComponent(t.magnet)}&name=${encodeURIComponent(t.name)}&size=${encodeURIComponent(t.size_formatted)}&hash=${encodeURIComponent(t.hash_info)}" target="_blank" onclick="event.stopPropagation()" title="Télécharger avec Torrent Studio Web">
+                  ⚡ Studio Web
+                </a>
                 <a class="btn btn-magnet" href="${t.magnet}" onclick="event.stopPropagation()" title="Télécharger via lien Magnet">
                   🧲 Magnet
-                </a>
-                <a class="btn btn-torrent" href="${torrentDownloadUrl}" target="_blank" download onclick="event.stopPropagation()" title="Télécharger le fichier .torrent">
-                  📥 .Torrent
                 </a>
               </div>
             </div>
@@ -1476,6 +1520,9 @@
               </div>
             </div>
             <div class="list-actions">
+              <a class="btn btn-studio" href="studio.html?magnet=${encodeURIComponent(t.magnet)}&name=${encodeURIComponent(t.name)}&size=${encodeURIComponent(t.size_formatted)}&hash=${encodeURIComponent(t.hash_info)}" target="_blank" onclick="event.stopPropagation()" title="Télécharger avec Torrent Studio Web">
+                ⚡ Studio
+              </a>
               <a class="btn btn-magnet" href="${t.magnet}" onclick="event.stopPropagation()" title="Télécharger Magnet">
                 🧲 Magnet
               </a>
@@ -1516,6 +1563,8 @@
       }
 
       // 2. Boutons de Téléchargement
+      const studioWebUrl = `studio.html?magnet=${encodeURIComponent(t.magnet)}&name=${encodeURIComponent(t.name)}&size=${encodeURIComponent(t.size_formatted)}&hash=${encodeURIComponent(t.hash_info)}`;
+      document.getElementById('modalStudioBtn').href = studioWebUrl;
       const torrentDownloadUrl = t.torrent_url || (t.hash_info ? `https://itorrents.org/torrent/${t.hash_info.toUpperCase()}.torrent` : '#');
       document.getElementById('modalMagnetBtn').href = t.magnet;
       document.getElementById('modalTorrentBtn').href = torrentDownloadUrl;
@@ -1784,6 +1833,9 @@
             </div>
           </div>
           <div class="source-actions">
+            <a class="btn btn-studio" href="studio.html?magnet=${encodeURIComponent(s.magnet)}&name=${encodeURIComponent(s.name)}&size=${encodeURIComponent(s.size_formatted)}&hash=${encodeURIComponent(s.hash_info)}" target="_blank" title="Télécharger avec Torrent Studio Web">
+              ⚡ Studio
+            </a>
             <a class="btn btn-magnet" href="${s.magnet}" title="Télécharger Magnet">
               🧲 Magnet
             </a>
