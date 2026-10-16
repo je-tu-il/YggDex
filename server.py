@@ -169,6 +169,46 @@ class SearchHandler(BaseHTTPRequestHandler):
                     self.send_json({"error": f"Torrent Studio Error: {err_content}"}, status=e.code)
                 return
 
+            elif path == "/api/torrent-studio/action":
+                length = int(self.headers.get("Content-Length", 0))
+                raw_data = self.rfile.read(length) if length > 0 else b"{}"
+                try:
+                    req = urllib.request.Request(
+                        f"{TORRENT_STUDIO_API}/api/torrents/action",
+                        data=raw_data,
+                        headers={"Content-Type": "application/json"}
+                    )
+                    resp = urllib.request.urlopen(req, timeout=5)
+                    self.send_json(json.loads(resp.read().decode("utf-8")))
+                except Exception as e:
+                    self.send_json({"error": str(e)}, status=500)
+                return
+
+            elif path == "/api/torrent-studio/open-folder":
+                length = int(self.headers.get("Content-Length", 0))
+                raw_data = self.rfile.read(length) if length > 0 else b"{}"
+                data = json.loads(raw_data.decode("utf-8")) if raw_data else {}
+                target_path = data.get("path")
+                torrent_name = data.get("name")
+                user_dl = os.path.expanduser(r"~\Downloads")
+                full_path = None
+                if target_path and os.path.exists(target_path):
+                    full_path = target_path
+                elif torrent_name:
+                    cand = os.path.join(user_dl, torrent_name)
+                    if os.path.exists(cand):
+                        full_path = cand
+
+                try:
+                    if full_path and os.path.exists(full_path):
+                        subprocess.Popen(['explorer.exe', '/select,', os.path.normpath(full_path)])
+                    else:
+                        os.startfile(user_dl)
+                    self.send_json({"success": True})
+                except Exception as e:
+                    self.send_json({"error": str(e)}, status=500)
+                return
+
             self.send_error(404, "Endpoint POST introuvable")
 
         except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
@@ -221,6 +261,64 @@ class SearchHandler(BaseHTTPRequestHandler):
                     "running": running,
                     "url": TORRENT_STUDIO_API
                 })
+                return
+
+            elif path == "/api/torrent-studio/start":
+                started = ensure_studio_running()
+                self.send_json({"running": started, "url": TORRENT_STUDIO_API})
+                return
+
+            elif path == "/api/torrent-studio/torrents":
+                if not is_studio_alive():
+                    if os.path.exists(TORRENT_STUDIO_EXE):
+                        ensure_studio_running()
+                if not is_studio_alive():
+                    self.send_json({"running": False, "torrents": [], "stats": {}})
+                    return
+                try:
+                    req = urllib.request.urlopen(f"{TORRENT_STUDIO_API}/api/torrents", timeout=3)
+                    data = json.loads(req.read().decode("utf-8"))
+                    data["running"] = True
+                    self.send_json(data)
+                except Exception as e:
+                    self.send_json({"running": False, "error": str(e), "torrents": [], "stats": {}})
+                return
+
+            elif path == "/api/torrent-studio/file":
+                name = params.get("name", [""])[0]
+                target_path = params.get("path", [""])[0]
+                user_dl = os.path.expanduser(r"~\Downloads")
+                target_file = None
+
+                if target_path and os.path.exists(target_path) and os.path.isfile(target_path):
+                    target_file = target_path
+                elif name:
+                    cand = os.path.join(user_dl, name)
+                    if os.path.exists(cand) and os.path.isfile(cand):
+                        target_file = cand
+                    elif os.path.exists(cand) and os.path.isdir(cand):
+                        # Si dossier, chercher le premier gros fichier (vidéo/archive)
+                        for r, _, fls in os.walk(cand):
+                            for f in fls:
+                                target_file = os.path.join(r, f)
+                                break
+                            if target_file:
+                                break
+
+                if target_file and os.path.isfile(target_file):
+                    filename = os.path.basename(target_file)
+                    file_size = os.path.getsize(target_file)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/octet-stream")
+                    self.send_header("Content-Disposition", f'attachment; filename="{urllib.parse.quote(filename)}"')
+                    self.send_header("Content-Length", str(file_size))
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    with open(target_file, "rb") as f:
+                        while chunk := f.read(1024 * 1024):
+                            self.wfile.write(chunk)
+                else:
+                    self.send_error(404, "Fichier introuvable dans les Téléchargements")
                 return
 
             elif path == "/api/stats":

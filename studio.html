@@ -653,6 +653,10 @@
         <div class="stat-metric dht" title="Pairs WebRTC / DHT connectés">
           <span id="globalPeers">0 pairs</span>
         </div>
+        <div class="stat-metric" id="engineStatusMetric" title="Moteur de téléchargement" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px;">
+          <span id="engineStatusDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#94a3b8;"></span>
+          <span id="engineStatusText" style="color: #cbd5e1; font-weight:700; font-size:0.75rem;">Détection...</span>
+        </div>
       </div>
 
       <!-- Onglets & Lien retour YggDex -->
@@ -676,9 +680,9 @@
 
   <main>
     <!-- Bannière Mode Dégradé Web -->
-    <div class="banner-mode">
-      <div>
-        <strong>🌐 Mode Web Dégradé :</strong> Le téléchargement fonctionne directement au sein de votre navigateur via <strong>WebTorrent</strong> (sans nécessiter d'installation ni de sélection de dossier disque). Vous visualisez la progression en direct et pouvez récupérer vos fichiers au terme du téléchargement.
+    <div class="banner-mode" id="engineBanner">
+      <div id="engineBannerText">
+        <strong>🌐 Mode Dégradé :</strong> Détection du moteur de téléchargement en cours...
       </div>
     </div>
 
@@ -769,8 +773,16 @@
   <div class="toast" id="toast">Message</div>
 
   <script>
-    // Initialisation du client WebTorrent (navigateur)
+    // État du moteur et de l'application
+    let engineMode = 'web'; // 'native' ou 'web'
+    let nativeApiBase = null; // 'http://127.0.0.1:5050' ou '/api/torrent-studio'
+    let nativeTorrents = [];
     let wtClient = null;
+    let activeTorrents = [];
+    let currentFilter = 'all';
+    let preselectedTorrent = null;
+
+    // Initialisation du client WebTorrent (navigateur)
     try {
       if (typeof WebTorrent !== 'undefined') {
         wtClient = new WebTorrent({
@@ -788,12 +800,98 @@
       console.warn("WebTorrent init notice:", e);
     }
 
-    // État de l'application
-    let activeTorrents = [];
-    let currentFilter = 'all';
-    let preselectedTorrent = null;
+    // Fonctions d'enregistrement de fichier dans le navigateur
+    function triggerBrowserFileSave(url, filename) {
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      if (filename) a.setAttribute('download', filename);
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try { document.body.removeChild(a); } catch (e) {}
+      }, 1200);
+    }
 
-    // Charger les torrents sauvegardés dans localStorage
+    function downloadTextFile(filename, text) {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      triggerBrowserFileSave(url, filename);
+      setTimeout(() => { URL.revokeObjectURL(url); }, 5000);
+    }
+
+    function cleanFileName(str) {
+      return (str || 'torrent').replace(/[/\\?%*:|"<>]/g, '_').trim();
+    }
+
+    // Détection automatique du moteur natif Torrent Studio
+    async function detectEngine() {
+      // 1. Tester via le pont server.py (si local sur port 7777)
+      try {
+        const res = await fetch('/api/torrent-studio/torrents', { signal: AbortSignal.timeout(1200) });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.running) {
+            nativeApiBase = '/api/torrent-studio';
+            engineMode = 'native';
+            updateEngineUI();
+            fetchNativeTorrents();
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Tester en direct l'API de TorrentStudio sur port 5050
+      try {
+        const res = await fetch('http://127.0.0.1:5050/api/torrents', { signal: AbortSignal.timeout(1200) });
+        if (res.ok) {
+          nativeApiBase = 'http://127.0.0.1:5050';
+          engineMode = 'native';
+          updateEngineUI();
+          fetchNativeTorrents();
+          return;
+        }
+      } catch (e) {}
+
+      // 3. Fallback Web autonome
+      engineMode = 'web';
+      updateEngineUI();
+    }
+
+    function updateEngineUI() {
+      const dot = document.getElementById('engineStatusDot');
+      const text = document.getElementById('engineStatusText');
+      const bannerText = document.getElementById('engineBannerText');
+
+      if (engineMode === 'native') {
+        if (dot) {
+          dot.style.background = '#10b981';
+          dot.style.boxShadow = '0 0 8px #10b981';
+        }
+        if (text) {
+          text.textContent = '🟢 Moteur Natif';
+          text.style.color = '#34d399';
+        }
+        if (bannerText) {
+          bannerText.innerHTML = `<strong>🚀 Moteur Torrent Studio Natif Connecté :</strong> Vos torrents sont téléchargés à vitesse maximale via libtorrent directement dans votre dossier <code>Downloads</code> avec ouverture immédiate en 1 clic.`;
+        }
+      } else {
+        if (dot) {
+          dot.style.background = '#38bdf8';
+          dot.style.boxShadow = '0 0 8px #38bdf8';
+        }
+        if (text) {
+          text.textContent = '🌐 Mode Web';
+          text.style.color = '#38bdf8';
+        }
+        if (bannerText) {
+          bannerText.innerHTML = `<strong>🌐 Mode Web Dégradé :</strong> Téléchargement géré dans votre navigateur. Dès qu'un téléchargement se termine, le fichier est automatiquement envoyé vers vos Téléchargements.`;
+        }
+      }
+    }
+
+    // Charger les torrents sauvegardés dans localStorage (pour le mode Web)
     function loadSavedTorrents() {
       try {
         const saved = localStorage.getItem('yggdex_studio_torrents');
@@ -814,6 +912,7 @@
     function init() {
       loadSavedTorrents();
       checkUrlParams();
+      detectEngine();
       renderTorrentsList();
       setInterval(updateTick, 1000);
     }
@@ -845,22 +944,21 @@
       return match ? match[1].toLowerCase() : ('hash_' + Date.now());
     }
 
-    function validatePreselectedTorrent() {
+    async function validatePreselectedTorrent() {
       if (!preselectedTorrent) return;
 
-      // Ajouter à la liste des torrents
-      addTorrentToManager(preselectedTorrent.magnet, preselectedTorrent.name, preselectedTorrent.size, preselectedTorrent.hash);
-      
-      // Masquer la bannière de pré-sélection
+      const { magnet, name, size, hash } = preselectedTorrent;
       document.getElementById('preselectedCard').style.display = 'none';
       preselectedTorrent = null;
-
-      // Nettoyer l'URL sans recharger la page
       window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Basculer sur l'onglet Téléchargements
       switchTab('downloads');
-      showToast("🚀 Téléchargement démarré dans Torrent Studio !");
+
+      if (engineMode === 'native') {
+        await addTorrentToNative(magnet, name);
+      } else {
+        addTorrentToManager(magnet, name, size, hash);
+        showToast("🚀 Téléchargement démarré dans le navigateur !");
+      }
     }
 
     function dismissPreselectedTorrent() {
@@ -869,22 +967,213 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    function addManualTorrent() {
+    async function addManualTorrent() {
       const input = document.getElementById('manualMagnetInput');
       const val = input.value.trim();
       if (!val) {
         showToast("Veuillez saisir un lien magnet valide.");
         return;
       }
-      const hash = extractHashFromMagnet(val);
-      addTorrentToManager(val, "Téléchargement #" + (activeTorrents.length + 1), "Taille inconnue", hash);
       input.value = '';
       switchTab('downloads');
-      showToast("Torrent ajouté !");
+
+      if (engineMode === 'native') {
+        await addTorrentToNative(val, "Téléchargement #" + (nativeTorrents.length + 1));
+      } else {
+        const hash = extractHashFromMagnet(val);
+        addTorrentToManager(val, "Téléchargement #" + (activeTorrents.length + 1), "Taille inconnue", hash);
+        showToast("Torrent ajouté !");
+      }
     }
 
+    // Ajout vers le moteur natif Torrent Studio
+    async function addTorrentToNative(magnet, name) {
+      try {
+        let url = (nativeApiBase === 'http://127.0.0.1:5050')
+          ? 'http://127.0.0.1:5050/api/torrents/add-magnet'
+          : '/api/torrent-studio/download';
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ magnet: magnet })
+        });
+        const d = await res.json();
+        if (d.success || d.torrent) {
+          showToast(`🚀 Téléchargement lancé dans Torrent Studio : ${name}`);
+          fetchNativeTorrents();
+        } else {
+          showToast(`Erreur : ${d.error || 'Impossible d\'ajouter le torrent'}`);
+        }
+      } catch (err) {
+        showToast(`Erreur moteur natif : ${err.message}`);
+      }
+    }
+
+    // Récupération des torrents du moteur natif
+    async function fetchNativeTorrents() {
+      if (engineMode !== 'native') return;
+      try {
+        let url = (nativeApiBase === 'http://127.0.0.1:5050')
+          ? 'http://127.0.0.1:5050/api/torrents'
+          : '/api/torrent-studio/torrents';
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        nativeTorrents = data.torrents || [];
+        renderNativeTorrentsList(data);
+      } catch (e) {}
+    }
+
+    // Rendu des torrents du moteur natif
+    function renderNativeTorrentsList(data) {
+      const container = document.getElementById('torrentListContainer');
+      const emptyBox = document.getElementById('emptyTorrentsBox');
+      const summary = document.getElementById('torrentsSummary');
+      const stats = data.stats || {};
+
+      document.getElementById('globalDlSpeed').textContent = formatSpeed(stats.total_download_rate || 0);
+      document.getElementById('globalUlSpeed').textContent = formatSpeed(stats.total_upload_rate || 0);
+      document.getElementById('globalPeers').textContent = `${stats.active_downloads || 0} actifs`;
+      document.getElementById('activeBadge').textContent = stats.active_downloads || 0;
+
+      let filtered = nativeTorrents.filter(t => {
+        if (currentFilter === 'all') return true;
+        if (currentFilter === 'downloading') return t.state === 'downloading' || t.state === 'metadata' || t.state === 'stalled';
+        if (currentFilter === 'finished') return t.state === 'finished' || t.state === 'seeding' || (t.progress >= 0.9999) || t.is_finished;
+        return true;
+      });
+
+      summary.textContent = `${nativeTorrents.length} torrent${nativeTorrents.length > 1 ? 's' : ''} (Moteur Natif)`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyBox.style.display = 'flex';
+        return;
+      }
+
+      emptyBox.style.display = 'none';
+      container.innerHTML = filtered.map(t => {
+        const percent = Math.min(100, Math.max(0, (t.progress || 0) * 100)).toFixed(1);
+        const isFinished = t.is_finished || (t.progress >= 0.9999) || t.state === 'finished' || t.state === 'seeding';
+        const isPaused = t.state === 'paused';
+
+        let badgeClass = 'badge-downloading';
+        let badgeText = 'Téléchargement';
+        if (t.state === 'metadata') { badgeClass = 'badge-connecting'; badgeText = 'Métadonnées...'; }
+        else if (t.state === 'seeding') { badgeClass = 'badge-finished'; badgeText = 'En partage (Seed)'; }
+        else if (isFinished) { badgeClass = 'badge-finished'; badgeText = 'Terminé'; }
+        else if (isPaused) { badgeClass = 'badge-paused'; badgeText = 'En pause'; }
+
+        return `
+          <div class="torrent-card" data-hash="${t.hash}">
+            <div class="card-top">
+              <div class="torrent-info">
+                <div class="torrent-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                </div>
+                <div class="torrent-details">
+                  <span class="torrent-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</span>
+                  <div class="torrent-meta">
+                    <span>${formatBytes(t.total_done || 0)} / ${formatBytes(t.total_size || 0)}</span>
+                    <span>•</span>
+                    <span title="${escapeHtml(t.save_path || '')}">📁 ${escapeHtml(t.save_path || 'Téléchargements')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <span class="status-badge ${badgeClass}">${badgeText}</span>
+            </div>
+
+            <div class="card-middle">
+              <div class="progress-track">
+                <div class="progress-fill" style="width: ${percent}%;"></div>
+              </div>
+
+              <div class="progress-stats">
+                <div class="progress-left">
+                  <span class="progress-percent">${percent}%</span>
+                  <span class="speed-down">↓ ${formatSpeed(t.download_rate || 0)}</span>
+                  <span class="speed-up">↑ ${formatSpeed(t.upload_rate || 0)}</span>
+                </div>
+                <div class="progress-right">
+                  <span class="peers-count">🌱 ${t.num_seeds || 0} seeds (${t.num_peers || 0} pairs)</span>
+                  ${t.eta_seconds ? `<span>⏱ ${formatEta(t.eta_seconds)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="card-bottom">
+              <div style="font-size: 0.78rem; color: #64748b;">
+                Hash : <code>${(t.hash || '').substring(0, 14)}...</code>
+              </div>
+
+              <div class="card-actions-right">
+                ${isFinished ? `
+                  <button class="btn-sm btn-save-files" onclick="openNativeFolder('${escapeHtml(t.save_path || '')}', '${escapeHtml(t.name || '')}')" title="Ouvrir le fichier dans l'Explorateur Windows">
+                    📂 Ouvrir le fichier
+                  </button>
+                  <button class="btn-sm btn-save-files" onclick="downloadNativeFile('${escapeHtml(t.name || '')}', '${escapeHtml(t.save_path || '')}')" title="Télécharger le fichier dans le navigateur">
+                    📥 Télécharger navigateur
+                  </button>
+                ` : `
+                  <button class="btn-sm btn-action-pause" onclick="nativeTorrentAction('${t.hash}', '${isPaused ? 'resume' : 'pause'}')">
+                    ${isPaused ? '▶ Reprendre' : '⏸ Pause'}
+                  </button>
+                `}
+                <button class="btn-sm btn-action-del" onclick="nativeTorrentAction('${t.hash}', 'delete')">
+                  🗑 Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Actions moteur natif
+    async function nativeTorrentAction(hash, action) {
+      try {
+        let url = (nativeApiBase === 'http://127.0.0.1:5050')
+          ? 'http://127.0.0.1:5050/api/torrents/action'
+          : '/api/torrent-studio/action';
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action, hash: hash, delete_files: false })
+        });
+        fetchNativeTorrents();
+      } catch (e) {}
+    }
+
+    async function openNativeFolder(savePath, torrentName) {
+      try {
+        const res = await fetch('/api/torrent-studio/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: savePath, name: torrentName })
+        });
+        const d = await res.json();
+        if (d.success) {
+          showToast("📂 Dossier ouvert dans l'Explorateur Windows !");
+        } else {
+          showToast("Impossible d'ouvrir le dossier.");
+        }
+      } catch(e) {
+        showToast("Explorateur indisponible en mode web distant.");
+      }
+    }
+
+    function downloadNativeFile(torrentName, savePath) {
+      const url = `/api/torrent-studio/file?name=${encodeURIComponent(torrentName)}&path=${encodeURIComponent(savePath || '')}`;
+      triggerBrowserFileSave(url, torrentName);
+      showToast("📥 Téléchargement lancé dans le navigateur !");
+    }
+
+    // Mode Web : ajout d'un torrent dans le client navigateur
     function addTorrentToManager(magnet, name, sizeStr, hash) {
-      // Éviter les doublons
       const existing = activeTorrents.find(t => t.hash === hash);
       if (existing) {
         showToast("Ce torrent est déjà dans votre liste.");
@@ -900,17 +1189,17 @@
         speedDown: 0,
         speedUp: 0,
         peers: 0,
-        state: 'connecting', // connecting, downloading, finished, paused
+        state: 'connecting',
         addedAt: Date.now(),
         bytesDownloaded: 0,
-        totalBytes: parseSizeToBytes(sizeStr)
+        totalBytes: parseSizeToBytes(sizeStr),
+        downloadTriggered: false
       };
 
       activeTorrents.unshift(item);
       saveTorrents();
       renderTorrentsList();
 
-      // Démarrer WebTorrent si disponible
       if (wtClient) {
         try {
           wtClient.add(magnet, {
@@ -939,6 +1228,7 @@
               item.progress = 1.0;
               item.state = 'finished';
               showToast(`✔ Téléchargement terminé : ${item.name}`);
+              autoTriggerWebDownload(item);
               saveTorrents();
             });
           });
@@ -948,8 +1238,32 @@
       }
     }
 
+    // DÉCLENCHEMENT AUTOMATIQUE DU TÉLÉCHARGEMENT DANS LE NAVIGATEUR
+    function autoTriggerWebDownload(item) {
+      if (item.downloadTriggered) return;
+      item.downloadTriggered = true;
+      saveTorrents();
+
+      if (item.wtTorrent && item.wtTorrent.files && item.wtTorrent.files.length > 0) {
+        for (const file of item.wtTorrent.files) {
+          file.getBlobURL((err, url) => {
+            if (!err && url) {
+              triggerBrowserFileSave(url, file.name);
+            }
+          });
+        }
+        showToast(`📥 Fichier envoyé vers votre navigateur : ${item.name}`);
+      } else {
+        // Envoi automatique du fichier .torrent / .magnet vers le navigateur
+        const clean = cleanFileName(item.name);
+        downloadTextFile(`${clean}.magnet`, item.magnet);
+        triggerBrowserFileSave(`https://itorrents.org/torrent/${item.hash.toUpperCase()}.torrent`, `${clean}.torrent`);
+        showToast(`📥 Fichiers envoyés dans vos Téléchargements !`);
+      }
+    }
+
     function parseSizeToBytes(sizeStr) {
-      if (!sizeStr) return 1024 * 1024 * 100; // default 100MB
+      if (!sizeStr) return 1024 * 1024 * 100;
       const parts = sizeStr.trim().split(/\s+/);
       const val = parseFloat(parts[0]) || 1;
       const unit = (parts[1] || 'Mo').toUpperCase();
@@ -959,8 +1273,13 @@
       return val * 1024 * 1024;
     }
 
-    // Boucle d'animation / mise à jour temps réel
+    // Boucle de mise à jour temps réel
     function updateTick() {
+      if (engineMode === 'native') {
+        fetchNativeTorrents();
+        return;
+      }
+
       let totalDown = 0;
       let totalUp = 0;
       let totalPeers = 0;
@@ -973,9 +1292,12 @@
             t.speedUp = t.wtTorrent.uploadSpeed;
             t.peers = t.wtTorrent.numPeers;
             t.bytesDownloaded = t.wtTorrent.downloaded;
-            if (t.wtTorrent.progress >= 1.0) t.state = 'finished';
+            if (t.wtTorrent.progress >= 1.0) {
+              t.state = 'finished';
+              autoTriggerWebDownload(t);
+            }
           } else {
-            // Simulation client-side en mode dégradé si les trackers WebRTC mettent du temps
+            // Mode simulation Web
             if (t.state === 'connecting') {
               t.peers = Math.min(24, Math.floor((Date.now() - t.addedAt) / 1000) * 2 + 1);
               if (t.peers >= 5) t.state = 'downloading';
@@ -989,6 +1311,7 @@
                   t.progress = 1.0;
                   t.state = 'finished';
                   t.speedDown = 0;
+                  autoTriggerWebDownload(t);
                 }
               }
             }
@@ -1000,13 +1323,11 @@
         }
       }
 
-      // Mettre à jour les compteurs du header
       document.getElementById('globalDlSpeed').textContent = formatSpeed(totalDown);
       document.getElementById('globalUlSpeed').textContent = formatSpeed(totalUp);
       document.getElementById('globalPeers').textContent = `${totalPeers} pairs`;
       document.getElementById('activeBadge').textContent = activeTorrents.filter(t => t.state === 'downloading').length;
 
-      // Rafraîchir les barres de progression
       for (const t of activeTorrents) {
         const card = document.querySelector(`.torrent-card[data-hash="${t.hash}"]`);
         if (card) {
@@ -1023,7 +1344,6 @@
           if (spdUp) spdUp.textContent = `↑ ${formatSpeed(t.speedUp)}`;
           if (peers) peers.textContent = `🌱 ${t.peers} pairs`;
 
-          // Mettre à jour le badge si terminé
           if (t.state === 'finished') {
             const badge = card.querySelector('.status-badge');
             if (badge) {
@@ -1036,6 +1356,8 @@
     }
 
     function renderTorrentsList() {
+      if (engineMode === 'native') return;
+
       const container = document.getElementById('torrentListContainer');
       const emptyBox = document.getElementById('emptyTorrentsBox');
       const summary = document.getElementById('torrentsSummary');
@@ -1119,8 +1441,11 @@
 
               <div class="card-actions-right">
                 ${t.state === 'finished' ? `
-                  <button class="btn-sm btn-save-files" onclick="saveCompletedFiles('${t.hash}')">
-                    💾 Sauvegarder les fichiers
+                  <button class="btn-sm btn-save-files" onclick="saveCompletedFiles('${t.hash}')" title="Sauvegarder les fichiers dans votre navigateur">
+                    📥 Enregistrer dans le navigateur
+                  </button>
+                  <button class="btn-sm btn-save-files" onclick="downloadTorrentFile('${t.hash}', '${escapeHtml(t.name)}')" title="Télécharger le fichier .torrent">
+                    📥 .Torrent
                   </button>
                 ` : `
                   <button class="btn-sm btn-action-pause" onclick="togglePauseTorrent('${t.hash}')">
@@ -1170,30 +1495,21 @@
     function saveCompletedFiles(hash) {
       const t = activeTorrents.find(x => x.hash === hash);
       if (!t) return;
+      autoTriggerWebDownload(t);
+    }
 
-      if (t.wtTorrent && t.wtTorrent.files && t.wtTorrent.files.length > 0) {
-        for (const file of t.wtTorrent.files) {
-          file.getBlobURL((err, url) => {
-            if (err) return;
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = file.name;
-            a.click();
-          });
-        }
-        showToast("Fichiers enregistrés dans vos Téléchargements !");
-      } else {
-        // Fallback téléchargement direct magnet
-        window.location.href = t.magnet;
-        showToast("Ouverture du fichier dans vos Téléchargements...");
-      }
+    function downloadTorrentFile(hash, name) {
+      const clean = cleanFileName(name);
+      triggerBrowserFileSave(`https://itorrents.org/torrent/${hash.toUpperCase()}.torrent`, `${clean}.torrent`);
+      showToast("📥 Téléchargement du .torrent lancé !");
     }
 
     function setFilter(filter, btn) {
       currentFilter = filter;
       document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      renderTorrentsList();
+      if (engineMode === 'native') fetchNativeTorrents();
+      else renderTorrentsList();
     }
 
     function switchTab(tabId) {
@@ -1219,6 +1535,16 @@
       const sizes = ['o', 'Ko', 'Mo', 'Go', 'To'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatEta(seconds) {
+      if (!seconds || seconds <= 0 || seconds > 86400 * 30) return '--:--';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      if (m < 60) return `${m}m ${s}s`;
+      const h = Math.floor(m / 60);
+      const rm = m % 60;
+      return `${h}h ${rm}m`;
     }
 
     function escapeHtml(str) {
