@@ -67,7 +67,29 @@ def format_date(timestamp):
     except Exception:
         return "Inconnue"
 
+def ensure_database_extracted():
+    if os.path.exists(DB_FILE):
+        return True
+    db_parts_dir = os.path.join(SCRIPT_DIR, "database")
+    if os.path.exists(db_parts_dir):
+        parts = sorted([os.path.join(db_parts_dir, f) for f in os.listdir(db_parts_dir) if f.startswith("ygg_db.part")])
+        if parts:
+            print("[+] Décompression initiale de la base de données YGG (1,22 million de torrents)...")
+            import zipfile
+            import io
+            buffer = io.BytesIO()
+            for p in parts:
+                with open(p, "rb") as f_part:
+                    buffer.write(f_part.read())
+            buffer.seek(0)
+            with zipfile.ZipFile(buffer) as zf:
+                zf.extractall(SCRIPT_DIR)
+            print("[OK] Base de données ygg_torrents.db prête !")
+            return True
+    return False
+
 def get_db():
+    ensure_database_extracted()
     conn = sqlite3.connect(f"file:{DB_FILE}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn

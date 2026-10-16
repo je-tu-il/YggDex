@@ -22,19 +22,25 @@ if %ERRORLEVEL% NEQ 0 (
 for /f "tokens=*" %%v in ('python --version') do echo [OK] %%v détecté.
 echo.
 
-:: 2. Vérification de la base de données
-echo [2/4] Vérification de la base de données (ygg_torrents.db)...
+:: 2. Vérification et décompression de la base de données
+echo [2/4] Vérification de la base de données...
 if exist "%~dp0ygg_torrents.db" (
-    echo [OK] Base de données locale trouvée.
+    echo [OK] Base de données ygg_torrents.db prête.
 ) else (
-    echo [!] Le fichier 'ygg_torrents.db' est absent dans ce dossier.
-    echo.
-    echo Vous devez télécharger la base de données depuis les Releases GitHub.
-    echo Placez 'ygg_torrents.db' dans : %~dp0
-    echo.
-    set /p DL="Voulez-vous ouvrir la page des Releases GitHub maintenant ? (O/N) : "
-    if /i "%DL%"=="O" (
-        start https://github.com/
+    if exist "%~dp0database\ygg_db.part01" (
+        echo [+] Décompression initiale de la base de données YGG (1,22 million de torrents)...
+        python -c "import glob, zipfile, io, os; dir='%~dp0'; parts=sorted(glob.glob(os.path.join(dir, 'database', 'ygg_db.part*'))); buf=io.BytesIO(b''.join(open(p, 'rb').read() for p in parts)); zipfile.ZipFile(buf).extractall(dir)"
+        if exist "%~dp0ygg_torrents.db" (
+            echo [OK] Base de données décompressée avec succès !
+        ) else (
+            echo [ERREUR] Échec de la décompression de la base de données.
+            pause
+            exit /b 1
+        )
+    ) else (
+        echo [ERREUR] Le dossier 'database/' avec les archives est introuvable.
+        pause
+        exit /b 1
     )
 )
 echo.

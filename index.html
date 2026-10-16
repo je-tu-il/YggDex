@@ -112,6 +112,26 @@
       background: linear-gradient(135deg, #d97706, #f59e0b);
       transform: translateY(-1px);
     }
+    .client-btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .client-btn-header:hover {
+      color: #fff;
+      border-color: #475569;
+      background: #1e293b;
+      transform: translateY(-1px);
+    }
     .status-dot {
       width: 8px;
       height: 8px;
@@ -628,6 +648,10 @@
       </div>
 
       <div class="header-right">
+        <a href="https://www.qbittorrent.org/download" target="_blank" rel="noopener noreferrer" class="client-btn-header" title="Télécharger un client torrent recommandé (qBittorrent - gratuit & sans pub)">
+          <span>📥 Client Torrent</span>
+        </a>
+
         <a href="http://127.0.0.1:5050" target="_blank" class="studio-btn-header" id="studioHeaderBtn" title="Ouvrir le panneau Torrent Studio">
           <span class="status-dot" id="studioDot"></span>
           <span>⚡ Torrent Studio</span>

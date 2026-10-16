@@ -112,6 +112,24 @@
       transition: all 0.15s;
     }
     .github-link:hover { color: #fff; border-color: #475569; }
+    .client-link {
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(56, 189, 248, 0.08);
+      transition: all 0.15s;
+    }
+    .client-link:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+    }
 
     .view-toggles {
       display: flex;
@@ -435,9 +453,14 @@
       </div>
 
       <div class="header-right">
-        <a href="https://github.com/" target="_blank" class="github-link" title="Voir le dépôt GitHub & Releases">
+        <a href="https://www.qbittorrent.org/download" target="_blank" rel="noopener noreferrer" class="client-link" title="Télécharger un client torrent recommandé (qBittorrent - gratuit & sans pub)">
+          <span>📥</span>
+          <span>Client Torrent</span>
+        </a>
+
+        <a href="https://github.com/je-tu-il/YggDex" target="_blank" class="github-link" title="Voir le dépôt GitHub YggDex">
           <span>📦</span>
-          <span>GitHub & Téléchargement</span>
+          <span>GitHub</span>
         </a>
 
         <div class="view-toggles">
@@ -455,9 +478,9 @@
   <main>
     <div class="banner-offline" id="bannerOffline" style="display: none;">
       <div>
-        <strong>Mode Web GitHub Pages actif :</strong> Vous explorez la sélection de démonstration. Pour chercher parmi l'intégralité des <strong>1 218 387 torrents</strong> et envoyer vers Torrent Studio en 1 clic :
+        <strong>Mode Web GitHub Pages actif :</strong> Vous explorez la sélection de démonstration. Pour chercher parmi l'intégralité des <strong>1 218 387 torrents</strong> avec la base SQLite locale :
       </div>
-      <a href="https://github.com/" class="banner-btn" target="_blank">📥 Télécharger YggDex Local v1.0.0</a>
+      <a href="https://github.com/je-tu-il/YggDex" class="banner-btn" target="_blank">📥 Télécharger YggDex (Base complète incluse)</a>
     </div>
 
     <div class="search-section">
