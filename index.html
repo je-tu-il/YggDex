@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Moteur de Recherche Local YGG + Torrent Studio</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151d30;
+      --card-hover: #1e293b;
+      --border: #26334d;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --success: #10b981;
+      --success-hover: #059669;
+      --accent: #818cf8;
+      --studio: #f59e0b;
+      --studio-hover: #d97706;
+      --danger: #f43f5e;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: rgba(11, 15, 25, 0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+    .header-content {
+      max-width: 1550px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stats-summary {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+    }
+    .stats-item strong {
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .studio-btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: linear-gradient(135deg, #b45309, #d97706);
+      color: #fff;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s;
+      box-shadow: 0 2px 4px rgba(217, 119, 6, 0.25);
+    }
+    .studio-btn-header:hover {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      transform: translateY(-1px);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .status-dot.offline {
+      background: #94a3b8;
+      box-shadow: none;
+    }
+
+    .view-toggles {
+      display: flex;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .view-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s;
+    }
+    .view-btn.active {
+      background: #0284c7;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1550px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .search-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      width: 100%;
+    }
+    .search-icon {
+      position: absolute;
+      left: 1.25rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 0.9rem 3rem 0.9rem 3.4rem;
+      color: #fff;
+      font-size: 1.15rem;
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+    }
+    .clear-btn {
+      position: absolute;
+      right: 1.25rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: none;
+    }
+    .clear-btn:hover { color: #fff; }
+
+    .filters-bar {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .pills {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    .pill {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .pill:hover {
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .pill.active {
+      background: #0284c7;
+      border-color: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+    }
+
+    .secondary-filters {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--primary); }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      user-select: none;
+    }
+    .checkbox-label input { cursor: pointer; }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      padding: 0.25rem 0.5rem;
+    }
+
+    /* MODE GRILLE (POSTERS / MINIATURES) */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+      gap: 1.25rem;
+    }
+    .grid-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .grid-card:hover {
+      transform: translateY(-4px);
+      border-color: #475569;
+      box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+    }
+    .poster-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 142%; /* Aspect ratio affiche */
+      background: #0d1424;
+      overflow: hidden;
+    }
+    .poster-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    .grid-card:hover .poster-img {
+      transform: scale(1.04);
+    }
+    .poster-fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      color: var(--text-muted);
+      gap: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .fallback-icon { font-size: 2.75rem; }
+    .poster-overlay-top {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.35rem;
+      z-index: 2;
+    }
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+    .badge-cat {
+      background: rgba(15, 23, 42, 0.85);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .badge-size {
+      background: rgba(49, 46, 129, 0.9);
+      color: #e0e7ff;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      margin-left: auto;
+    }
+    .grid-card-content {
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      flex: 1;
+    }
+    .grid-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #f1f5f9;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+      min-height: 2.4em;
+    }
+    .grid-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+    .stats-inline {
+      display: flex;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+    .stat-seeds { color: #34d399; }
+    .stat-leech { color: #f87171; }
+    .stat-completed { color: #38bdf8; }
+
+    .grid-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: auto;
+      padding-top: 0.45rem;
+      border-top: 1px solid #1e293b;
+    }
+    .grid-actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+    }
+
+    /* BOUTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-studio {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(217, 119, 6, 0.25);
+    }
+    .btn-studio:hover {
+      background: linear-gradient(135deg, #b45309, #d97706);
+    }
+    .btn-studio.sent {
+      background: #10b981;
+      color: #fff;
+    }
+    .btn-studio.loading {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .btn-magnet {
+      background: #065f46;
+      color: #a7f3d0;
+      border-color: #059669;
+    }
+    .btn-magnet:hover {
+      background: #047857;
+      color: #fff;
+    }
+    .btn-magnet.copied {
+      background: #10b981;
+      color: #fff;
+    }
+    .btn-open {
+      background: #0284c7;
+      color: #fff;
+    }
+    .btn-open:hover { background: #0369a1; }
+    .btn-torrent {
+      background: #1e293b;
+      color: #94a3b8;
+      border-color: #334155;
+    }
+    .btn-torrent:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    /* MODE LISTE COMPACT */
+    .results-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .list-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .list-card:hover {
+      border-color: #475569;
+      background: #1a243a;
+    }
+    .list-thumb {
+      width: 48px;
+      height: 68px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #0d1424;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .list-thumb-placeholder {
+      width: 48px;
+      height: 68px;
+      border-radius: 6px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .list-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .list-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .list-actions {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-bottom: 2rem;
+    }
+    .page-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--primary); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .page-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0 0.5rem;
+    }
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 4rem;
+      color: var(--primary);
+      font-size: 1.15rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+    }
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #10b981;
+      color: #fff;
+      padding: 0.85rem 1.45rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.5);
+      display: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      z-index: 100;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="#" class="logo" onclick="resetSearch(); return false;">
+          <span>🏴‍☠️</span>
+          <span>YGG Search</span>
+          <span class="logo-badge">Pro Studio</span>
+        </a>
+      </div>
+
+      <div class="stats-summary" id="statsSummary">
+        <div class="stats-item">Torrents : <strong id="statCount">Chargement...</strong></div>
+        <div class="stats-item">Volume : <strong id="statSize">-</strong></div>
+        <div class="stats-item">Jaquettes : <strong id="statCovers">-</strong></div>
+      </div>
+
+      <div class="header-right">
+        <a href="http://127.0.0.1:5050" target="_blank" class="studio-btn-header" id="studioHeaderBtn" title="Ouvrir le panneau Torrent Studio">
+          <span class="status-dot" id="studioDot"></span>
+          <span>⚡ Torrent Studio</span>
+        </a>
+
+        <div class="view-toggles">
+          <button class="view-btn active" id="gridToggle" onclick="setViewMode('grid')">
+            <span>⊞</span> Affiches
+          </button>
+          <button class="view-btn" id="listToggle" onclick="setViewMode('list')">
+            <span>☰</span> Liste
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="search-section">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="searchInput" 
+          class="search-input" 
+          placeholder="Rechercher par titre (films, séries, animes, jeux PC/consoles, musiques, livres...)"
+          autocomplete="off"
+          autofocus
+        />
+        <button id="clearBtn" class="clear-btn" onclick="clearInput()">✕</button>
+      </div>
+
+      <div class="filters-bar">
+        <div class="pills" id="categoryPills">
+          <button class="pill active" data-pcat="">Tous</button>
+          <button class="pill" data-pcat="2145">Films & Vidéos</button>
+          <button class="pill" data-pcat="2142">Jeux Vidéo</button>
+          <button class="pill" data-pcat="2140">eBooks & BD</button>
+          <button class="pill" data-pcat="2139">Musique</button>
+          <button class="pill" data-pcat="2144">Applications</button>
+          <button class="pill" data-pcat="2141">Emulation</button>
+          <button class="pill" data-pcat="2188">XXX</button>
+        </div>
+
+        <div class="secondary-filters">
+          <select id="subcatSelect" onchange="triggerSearch(1)">
+            <option value="">Toutes sous-catégories</option>
+          </select>
+
+          <select id="qualitySelect" onchange="triggerSearch(1)">
+            <option value="">Toutes résolutions</option>
+            <option value="2160p">4K / 2160p</option>
+            <option value="1080p">1080p Full HD</option>
+            <option value="720p">720p HD</option>
+            <option value="MULTI">MULTI / VF</option>
+            <option value="VOSTFR">VOSTFR</option>
+          </select>
+
+          <select id="sizePresetSelect" onchange="triggerSearch(1)">
+            <option value="">Toutes tailles</option>
+            <option value="small">&lt; 2 Go</option>
+            <option value="medium">2 à 10 Go</option>
+            <option value="large">&gt; 10 Go</option>
+          </select>
+
+          <select id="sortSelect" onchange="triggerSearch(1)">
+            <option value="relevance">Pertinence</option>
+            <option value="date" selected>Plus récents</option>
+            <option value="size_desc">Taille ⬇</option>
+            <option value="size_asc">Taille ⬆</option>
+            <option value="seed">Seeders ⬇</option>
+            <option value="completed">Téléchargés ⬇</option>
+          </select>
+
+          <label class="checkbox-label" title="Afficher uniquement les torrents avec miniature">
+            <input type="checkbox" id="hasImageCheck" onchange="triggerSearch(1)" />
+            <span>🖼 Avec jaquette</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-header">
+      <span id="resultsCount">Prêt</span>
+      <button class="btn btn-torrent" style="font-size: 0.78rem; padding: 0.25rem 0.6rem;" onclick="copyAllMagnets()">
+        📋 Copier tous les magnets de la page
+      </button>
+    </div>
+
+    <div class="loading-spinner" id="loadingSpinner">
+      Recherche ultra-rapide en cours...
+    </div>
+
+    <div id="resultsContainer" class="results-grid"></div>
+
+    <div class="pagination" id="pagination" style="display: none;">
+      <button class="page-btn" id="prevBtn" onclick="changePage(-1)">◀ Précédent</button>
+      <span class="page-info" id="pageInfo">Page 1 / 1</span>
+      <button class="page-btn" id="nextBtn" onclick="changePage(1)">Suivant ▶</button>
+    </div>
+  </main>
+
+  <div class="toast" id="toast">Lien Magnet copié !</div>
+
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentPcat = '';
+    let currentCat = '';
+    let categoriesData = [];
+    let debounceTimer = null;
+    let searchAbortController = null;
+    let currentResults = [];
+    let currentViewMode = localStorage.getItem('ygg_view_mode') || 'grid';
+
+    const CAT_ICONS = {
+      '2145': '🎬', '2142': '🎮', '2140': '📚', '2139': '🎵', 
+      '2144': '💻', '2141': '🕹️', '2188': '🔞', '2200': '🖨️', 'default': '📁'
+    };
+
+    function getCatIcon(pcatId) {
+      return CAT_ICONS[String(pcatId)] || CAT_ICONS['default'];
+    }
+
+    async function init() {
+      setViewMode(currentViewMode, false);
+      loadStats();
+      checkStudioStatus();
+      await loadCategories();
+      setupEvents();
+      triggerSearch(1);
+
+      // Rafraîchir statut studio toutes les 15s
+      setInterval(checkStudioStatus, 15000);
+    }
+
+    async function checkStudioStatus() {
+      try {
+        const res = await fetch('/api/torrent-studio/status');
+        const data = await res.json();
+        const dot = document.getElementById('studioDot');
+        if (data.running) {
+          dot.classList.remove('offline');
+          dot.title = "Torrent Studio est actif";
+        } else {
+          dot.classList.add('offline');
+          dot.title = "Torrent Studio sera lancé automatiquement au clic";
+        }
+      } catch (e) {}
+    }
+
+    function setViewMode(mode, refresh = true) {
+      currentViewMode = mode;
+      localStorage.setItem('ygg_view_mode', mode);
+      document.getElementById('gridToggle').classList.toggle('active', mode === 'grid');
+      document.getElementById('listToggle').classList.toggle('active', mode === 'list');
+      const container = document.getElementById('resultsContainer');
+      container.className = mode === 'grid' ? 'results-grid' : 'results-list';
+      if (refresh && currentResults.length > 0) {
+        renderResults(currentResults);
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('statCount').textContent = Number(data.total_torrents).toLocaleString('fr-FR');
+        document.getElementById('statSize').textContent = data.total_size_formatted;
+        document.getElementById('statCovers').textContent = Number(data.total_covers).toLocaleString('fr-FR');
+      } catch (e) {}
+    }
+
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        categoriesData = data.categories || [];
+        updateSubcatDropdown();
+      } catch (e) {}
+    }
+
+    function updateSubcatDropdown() {
+      const select = document.getElementById('subcatSelect');
+      select.innerHTML = '<option value="">Toutes sous-catégories</option>';
+      
+      let relevant = categoriesData;
+      if (currentPcat) {
+        relevant = categoriesData.filter(p => String(p.id) === String(currentPcat));
+      }
+      
+      for (const parent of relevant) {
+        if (parent.subcategories && parent.subcategories.length > 0) {
+          const optgroup = document.createElement('optgroup');
+          optgroup.label = parent.name;
+          for (const sub of parent.subcategories) {
+            const opt = document.createElement('option');
+            opt.value = sub.id;
+            opt.textContent = `${sub.name} (${Number(sub.count).toLocaleString('fr-FR')})`;
+            if (String(sub.id) === String(currentCat)) opt.selected = true;
+            optgroup.appendChild(opt);
+          }
+          select.appendChild(optgroup);
+        }
+      }
+    }
+
+    function setupEvents() {
+      const input = document.getElementById('searchInput');
+      const clearBtn = document.getElementById('clearBtn');
+
+      input.addEventListener('input', (e) => {
+        clearBtn.style.display = e.target.value ? 'block' : 'none';
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          triggerSearch(1);
+        }, 350);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          clearTimeout(debounceTimer);
+          triggerSearch(1);
+        }
+      });
+
+      document.getElementById('categoryPills').addEventListener('click', (e) => {
+        const pill = e.target.closest('.pill');
+        if (!pill) return;
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        currentPcat = pill.getAttribute('data-pcat');
+        currentCat = '';
+        updateSubcatDropdown();
+        triggerSearch(1);
+      });
+    }
+
+    function clearInput() {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      document.getElementById('clearBtn').style.display = 'none';
+      input.focus();
+      triggerSearch(1);
+    }
+
+    function resetSearch() {
+      clearInput();
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      document.querySelector('.pill[data-pcat=""]').classList.add('active');
+      currentPcat = '';
+      currentCat = '';
+      document.getElementById('qualitySelect').value = '';
+      document.getElementById('sizePresetSelect').value = '';
+      document.getElementById('hasImageCheck').checked = false;
+      updateSubcatDropdown();
+      triggerSearch(1);
+    }
+
+    async function triggerSearch(page = 1) {
+      currentPage = page;
+      const q = document.getElementById('searchInput').value.trim();
+      const cat = document.getElementById('subcatSelect').value;
+      const quality = document.getElementById('qualitySelect').value;
+      const sortVal = document.getElementById('sortSelect').value;
+      const sizePreset = document.getElementById('sizePresetSelect').value;
+      const hasImage = document.getElementById('hasImageCheck').checked;
+      
+      let sort = "date";
+      let order = "desc";
+      if (sortVal === "relevance") { sort = "relevance"; order = "asc"; }
+      else if (sortVal === "date") { sort = "date"; order = "desc"; }
+      else if (sortVal === "size_desc") { sort = "size"; order = "desc"; }
+      else if (sortVal === "size_asc") { sort = "size"; order = "asc"; }
+      else if (sortVal === "seed") { sort = "seed"; order = "desc"; }
+      else if (sortVal === "completed") { sort = "completed"; order = "desc"; }
+
+      const params = new URLSearchParams({
+        q: q,
+        page: page,
+        limit: 48,
+        sort: sort,
+        order: order
+      });
+
+      if (cat) params.append("category", cat);
+      else if (currentPcat) params.append("parent_category", currentPcat);
+      if (quality) params.append("quality", quality);
+      if (hasImage) params.append("has_image", "1");
+
+      if (sizePreset === 'small') {
+        params.append("max_size", String(2 * 1024 * 1024 * 1024)); // < 2GB
+      } else if (sizePreset === 'medium') {
+        params.append("min_size", String(2 * 1024 * 1024 * 1024));
+        params.append("max_size", String(10 * 1024 * 1024 * 1024)); // 2-10GB
+      } else if (sizePreset === 'large') {
+        params.append("min_size", String(10 * 1024 * 1024 * 1024)); // > 10GB
+      }
+
+      if (searchAbortController) searchAbortController.abort();
+      searchAbortController = new AbortController();
+
+      const spinner = document.getElementById('loadingSpinner');
+      const container = document.getElementById('resultsContainer');
+      const countEl = document.getElementById('resultsCount');
+      const pagination = document.getElementById('pagination');
+
+      spinner.style.display = 'block';
+      container.innerHTML = '';
+      countEl.textContent = "Recherche...";
+
+      const t0 = performance.now();
+      try {
+        const res = await fetch(`/api/search?${params.toString()}`, { signal: searchAbortController.signal });
+        const data = await res.json();
+        const duration = Math.round(performance.now() - t0);
+
+        spinner.style.display = 'none';
+        currentResults = data.results || [];
+        totalPages = data.pages || 1;
+
+        countEl.textContent = `${Number(data.total).toLocaleString('fr-FR')} résultat(s) en ${duration} ms`;
+
+        renderResults(currentResults);
+        renderPagination();
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          spinner.style.display = 'none';
+          countEl.textContent = "Erreur de connexion";
+        }
+      }
+    }
+
+    function renderResults(results) {
+      const container = document.getElementById('resultsContainer');
+      container.innerHTML = '';
+
+      if (results.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <h3>Aucun torrent trouvé</h3>
+            <p style="margin-top: 0.5rem;">Modifiez vos critères ou réinitialisez les filtres.</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentViewMode === 'grid') {
+        renderGridView(results, container);
+      } else {
+        renderListView(results, container);
+      }
+    }
+
+    function renderGridView(results, container) {
+      for (const t of results) {
+        const card = document.createElement('div');
+        card.className = 'grid-card';
+        const icon = getCatIcon(t.parent_category_id);
+        const hasImg = Boolean(t.image_url);
+
+        card.innerHTML = `
+          <div class="poster-wrapper">
+            ${hasImg ? `
+              <img 
+                class="poster-img" 
+                src="${escapeHtml(t.image_url)}" 
+                alt="${escapeHtml(t.name)}"
+                loading="lazy"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+              />
+              <div class="poster-fallback" style="display: none;">
+                <span class="fallback-icon">${icon}</span>
+                <span style="font-size: 0.75rem; color: #94a3b8;">${escapeHtml(t.category_name)}</span>
+              </div>
+            ` : `
+              <div class="poster-fallback">
+                <span class="fallback-icon">${icon}</span>
+                <span style="font-size: 0.75rem; color: #94a3b8;">${escapeHtml(t.category_name)}</span>
+              </div>
+            `}
+            <div class="poster-overlay-top">
+              <span class="badge badge-cat">${escapeHtml(t.category_name)}</span>
+              <span class="badge badge-size">${t.size_formatted}</span>
+            </div>
+          </div>
+
+          <div class="grid-card-content">
+            <div class="grid-title" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>
+            <div class="grid-meta">
+              <span>${t.date_formatted.split(' ')[0]}</span>
+              <div class="stats-inline">
+                <span class="stat-seeds" title="Seeders">▲ ${Number(t.seed).toLocaleString('fr-FR')}</span>
+                <span class="stat-leech" title="Leechers">▼ ${Number(t.leech).toLocaleString('fr-FR')}</span>
+              </div>
+            </div>
+            
+            <div class="grid-actions">
+              <button class="btn btn-studio" onclick="sendToTorrentStudio('${t.magnet.replace(/'/g, "\\'")}', this)" title="Lancer directement dans Torrent Studio">
+                ⚡ Télécharger
+              </button>
+
+              <div class="grid-actions-row">
+                <button class="btn btn-magnet" onclick="copyMagnet('${t.magnet.replace(/'/g, "\\'")}', this)" title="Copier le lien magnet">
+                  🧲 Magnet
+                </button>
+                <a class="btn btn-open" href="${t.magnet}" title="Ouvrir dans votre client torrent par défaut">
+                  🚀 Ouvrir
+                </a>
+              </div>
+
+              ${t.torrent_url ? `
+                <a class="btn btn-torrent" href="${t.torrent_url}" target="_blank" title="Télécharger le fichier .torrent depuis le cache iTorrents">
+                  📥 Fichier .torrent
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    function renderListView(results, container) {
+      for (const t of results) {
+        const card = document.createElement('div');
+        card.className = 'list-card';
+        const icon = getCatIcon(t.parent_category_id);
+        const hasImg = Boolean(t.image_url);
+
+        card.innerHTML = `
+          ${hasImg ? `
+            <img 
+              class="list-thumb" 
+              src="${escapeHtml(t.image_url)}" 
+              alt="${escapeHtml(t.name)}" 
+              loading="lazy"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            />
+            <div class="list-thumb-placeholder" style="display: none;">${icon}</div>
+          ` : `
+            <div class="list-thumb-placeholder">${icon}</div>
+          `}
+          
+          <div class="list-info">
+            <div class="list-title" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>
+            <div class="list-meta">
+              <span class="badge badge-cat">${escapeHtml(t.parent_category_name)} &rsaquo; ${escapeHtml(t.category_name)}</span>
+              <span class="badge badge-size">${t.size_formatted}</span>
+              <span>${t.date_formatted}</span>
+              <span class="stat-seeds">▲ ${Number(t.seed).toLocaleString('fr-FR')} seeds</span>
+              <span class="stat-leech">▼ ${Number(t.leech).toLocaleString('fr-FR')} leech</span>
+              <span class="stat-completed">✔ ${Number(t.completed).toLocaleString('fr-FR')} complétés</span>
+            </div>
+          </div>
+
+          <div class="list-actions">
+            <button class="btn btn-studio" onclick="sendToTorrentStudio('${t.magnet.replace(/'/g, "\\'")}', this)">
+              ⚡ Télécharger
+            </button>
+            <button class="btn btn-magnet" onclick="copyMagnet('${t.magnet.replace(/'/g, "\\'")}', this)" title="Copier magnet">
+              🧲 Magnet
+            </button>
+            <a class="btn btn-open" href="${t.magnet}" title="Ouvrir dans client externe">
+              🚀 Client
+            </a>
+            ${t.torrent_url ? `
+              <a class="btn btn-torrent" href="${t.torrent_url}" target="_blank" title="Cache .torrent">
+                📥 .torrent
+              </a>
+            ` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    async function sendToTorrentStudio(magnet, btn) {
+      if (!magnet) return;
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = "⏳ Envoi...";
+      btn.classList.add("loading");
+
+      try {
+        const res = await fetch('/api/torrent-studio/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonStringifySafe({ magnet: magnet })
+        });
+        const data = await res.json();
+
+        btn.classList.remove("loading");
+        if (data.success) {
+          btn.innerHTML = "✔ Dans Studio !";
+          btn.classList.add("sent");
+          showToast("🚀 Téléchargement démarré dans Torrent Studio !");
+          document.getElementById('studioDot').classList.remove('offline');
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove("sent");
+          }, 3500);
+        } else {
+          btn.innerHTML = "❌ Erreur";
+          showToast(`Erreur: ${data.error || 'Échec d’envoi'}`);
+          setTimeout(() => { btn.innerHTML = originalHtml; }, 2500);
+        }
+      } catch (err) {
+        btn.classList.remove("loading");
+        btn.innerHTML = "❌ Échec";
+        showToast("Erreur de connexion à Torrent Studio");
+        setTimeout(() => { btn.innerHTML = originalHtml; }, 2500);
+      }
+    }
+
+    function jsonStringifySafe(obj) {
+      return JSON.stringify(obj);
+    }
+
+    function renderPagination() {
+      const pagination = document.getElementById('pagination');
+      if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
+      }
+      pagination.style.display = 'flex';
+      document.getElementById('prevBtn').disabled = currentPage <= 1;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+      document.getElementById('pageInfo').textContent = `Page ${currentPage} / ${totalPages}`;
+    }
+
+    function changePage(delta) {
+      const target = currentPage + delta;
+      if (target >= 1 && target <= totalPages) {
+        triggerSearch(target);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function copyMagnet(magnet, btn) {
+      navigator.clipboard.writeText(magnet).then(() => {
+        showToast("Lien Magnet copié !");
+        if (btn) {
+          const original = btn.innerHTML;
+          btn.innerHTML = "✔ Copié !";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.innerHTML = original;
+            btn.classList.remove("copied");
+          }, 2000);
+        }
+      }).catch(err => {
+        console.error("Échec copie:", err);
+      });
+    }
+
+    function copyAllMagnets() {
+      if (!currentResults || currentResults.length === 0) return;
+      const magnets = currentResults.map(r => r.magnet).join("\n");
+      navigator.clipboard.writeText(magnets).then(() => {
+        showToast(`${currentResults.length} liens Magnet copiés !`);
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+venv/
+env/
+.env
+
+# SQLite runtime files
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Large database (uploaded via GitHub Releases, not git repository)
+ygg_torrents.db
+
+# OS files
+.DS_Store
+Thumbs.db
+._*
+
+# Temporary & Release artifacts
+release/
+scratch/
