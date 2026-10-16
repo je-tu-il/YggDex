@@ -700,8 +700,11 @@
       </div>
       <div class="preselected-actions">
         <button class="btn-validate" onclick="validatePreselectedTorrent()">
-          <span>▶</span> Valider et Démarrer le téléchargement
+          <span>▶</span> Démarrer dans Torrent Studio
         </button>
+        <a class="btn-validate" id="preselectedClientBtn" href="#" style="background: linear-gradient(135deg, #059669, #10b981); text-decoration: none;" title="Ouvrir directement dans Torrent Studio ou qBittorrent pour télécharger le film">
+          <span>🧲</span> Télécharger le film (Client Torrent)
+        </a>
         <button class="btn-cancel" onclick="dismissPreselectedTorrent()">
           Ignorer
         </button>
@@ -814,13 +817,6 @@
       }, 1200);
     }
 
-    function downloadTextFile(filename, text) {
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      triggerBrowserFileSave(url, filename);
-      setTimeout(() => { URL.revokeObjectURL(url); }, 5000);
-    }
-
     function cleanFileName(str) {
       return (str || 'torrent').replace(/[/\\?%*:|"<>]/g, '_').trim();
     }
@@ -886,7 +882,7 @@
           text.style.color = '#38bdf8';
         }
         if (bannerText) {
-          bannerText.innerHTML = `<strong>🌐 Mode Web Dégradé :</strong> Téléchargement géré dans votre navigateur. Dès qu'un téléchargement se termine, le fichier est automatiquement envoyé vers vos Téléchargements.`;
+          bannerText.innerHTML = `<strong>💡 Mode Web :</strong> Pour télécharger vos films ou médias complets (.mkv, .mp4), lancez votre application <strong>Torrent Studio</strong> locale ou cliquez sur <strong>Télécharger le film (Client)</strong> pour lancer le téléchargement dans qBittorrent / Torrent Studio.`;
         }
       }
     }
@@ -1238,13 +1234,12 @@
       }
     }
 
-    // DÉCLENCHEMENT AUTOMATIQUE DU TÉLÉCHARGEMENT DANS LE NAVIGATEUR
+    // DÉCLENCHEMENT DU TÉLÉCHARGEMENT DANS LE NAVIGATEUR (Fichiers médias réels uniquement)
     function autoTriggerWebDownload(item) {
       if (item.downloadTriggered) return;
-      item.downloadTriggered = true;
-      saveTorrents();
-
       if (item.wtTorrent && item.wtTorrent.files && item.wtTorrent.files.length > 0) {
+        item.downloadTriggered = true;
+        saveTorrents();
         for (const file of item.wtTorrent.files) {
           file.getBlobURL((err, url) => {
             if (!err && url) {
@@ -1252,13 +1247,7 @@
             }
           });
         }
-        showToast(`📥 Fichier envoyé vers votre navigateur : ${item.name}`);
-      } else {
-        // Envoi automatique du fichier .torrent / .magnet vers le navigateur
-        const clean = cleanFileName(item.name);
-        downloadTextFile(`${clean}.magnet`, item.magnet);
-        triggerBrowserFileSave(`https://itorrents.org/torrent/${item.hash.toUpperCase()}.torrent`, `${clean}.torrent`);
-        showToast(`📥 Fichiers envoyés dans vos Téléchargements !`);
+        showToast(`📥 Fichier média envoyé vers votre navigateur : ${item.name}`);
       }
     }
 
@@ -1287,33 +1276,14 @@
       for (const t of activeTorrents) {
         if (t.state === 'downloading' || t.state === 'connecting') {
           if (t.wtTorrent) {
-            t.progress = t.wtTorrent.progress;
-            t.speedDown = t.wtTorrent.downloadSpeed;
-            t.speedUp = t.wtTorrent.uploadSpeed;
-            t.peers = t.wtTorrent.numPeers;
-            t.bytesDownloaded = t.wtTorrent.downloaded;
+            t.progress = t.wtTorrent.progress || 0;
+            t.speedDown = t.wtTorrent.downloadSpeed || 0;
+            t.speedUp = t.wtTorrent.uploadSpeed || 0;
+            t.peers = t.wtTorrent.numPeers || 0;
+            t.bytesDownloaded = t.wtTorrent.downloaded || 0;
             if (t.wtTorrent.progress >= 1.0) {
               t.state = 'finished';
               autoTriggerWebDownload(t);
-            }
-          } else {
-            // Mode simulation Web
-            if (t.state === 'connecting') {
-              t.peers = Math.min(24, Math.floor((Date.now() - t.addedAt) / 1000) * 2 + 1);
-              if (t.peers >= 5) t.state = 'downloading';
-            } else if (t.state === 'downloading') {
-              t.speedDown = 1500000 + Math.floor(Math.sin(Date.now() / 1000) * 400000);
-              t.speedUp = 45000 + Math.floor(Math.cos(Date.now() / 1000) * 15000);
-              t.bytesDownloaded += t.speedDown;
-              if (t.totalBytes > 0) {
-                t.progress = Math.min(1.0, t.bytesDownloaded / t.totalBytes);
-                if (t.progress >= 1.0) {
-                  t.progress = 1.0;
-                  t.state = 'finished';
-                  t.speedDown = 0;
-                  autoTriggerWebDownload(t);
-                }
-              }
             }
           }
 
@@ -1440,18 +1410,17 @@
               </div>
 
               <div class="card-actions-right">
+                <a class="btn-sm btn-save-files" href="${t.magnet}" title="Ouvrir dans votre client torrent pour télécharger le film complet sur votre disque">
+                  🧲 Télécharger le film (Client)
+                </a>
+                <button class="btn-sm btn-save-files" onclick="downloadTorrentFile('${t.hash}', '${escapeHtml(t.name)}')" title="Télécharger le fichier .torrent">
+                  📥 .Torrent
+                </button>
                 ${t.state === 'finished' ? `
-                  <button class="btn-sm btn-save-files" onclick="saveCompletedFiles('${t.hash}')" title="Sauvegarder les fichiers dans votre navigateur">
-                    📥 Enregistrer dans le navigateur
+                  <button class="btn-sm btn-save-files" onclick="saveCompletedFiles('${t.hash}')" title="Sauvegarder le fichier vidéo sur le disque">
+                    💾 Sauvegarder média
                   </button>
-                  <button class="btn-sm btn-save-files" onclick="downloadTorrentFile('${t.hash}', '${escapeHtml(t.name)}')" title="Télécharger le fichier .torrent">
-                    📥 .Torrent
-                  </button>
-                ` : `
-                  <button class="btn-sm btn-action-pause" onclick="togglePauseTorrent('${t.hash}')">
-                    ${t.state === 'paused' ? '▶ Reprendre' : '⏸ Pause'}
-                  </button>
-                `}
+                ` : ''}
                 <button class="btn-sm btn-action-del" onclick="deleteTorrent('${t.hash}')">
                   🗑 Supprimer
                 </button>
