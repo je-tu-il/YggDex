@@ -76,16 +76,23 @@ def ensure_database_extracted():
         if parts:
             print("[+] Décompression initiale de la base de données YGG (1,22 million de torrents)...")
             import zipfile
-            import io
-            buffer = io.BytesIO()
-            for p in parts:
-                with open(p, "rb") as f_part:
-                    buffer.write(f_part.read())
-            buffer.seek(0)
-            with zipfile.ZipFile(buffer) as zf:
-                zf.extractall(SCRIPT_DIR)
-            print("[OK] Base de données ygg_torrents.db prête !")
-            return True
+            temp_zip = os.path.join(SCRIPT_DIR, "temp_ygg_db.zip")
+            try:
+                with open(temp_zip, "wb") as f_out:
+                    for p in parts:
+                        with open(p, "rb") as f_in:
+                            while chunk := f_in.read(1024 * 1024 * 8):
+                                f_out.write(chunk)
+                with zipfile.ZipFile(temp_zip) as zf:
+                    zf.extractall(SCRIPT_DIR)
+                print("[OK] Base de données ygg_torrents.db prête !")
+                return True
+            finally:
+                if os.path.exists(temp_zip):
+                    try:
+                        os.remove(temp_zip)
+                    except Exception:
+                        pass
     return False
 
 def get_db():

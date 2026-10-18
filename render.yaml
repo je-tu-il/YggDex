@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: yggdex
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: python -c "import server; server.ensure_database_extracted()"
+    startCommand: python server.py --no-browser
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
