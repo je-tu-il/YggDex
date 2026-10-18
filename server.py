@@ -566,7 +566,7 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
         super().handle_error(request, client_address)
 
 def run():
-    server_address = ("127.0.0.1", PORT)
+    server_address = ("0.0.0.0", PORT)
     httpd = ThreadedHTTPServer(server_address, SearchHandler)
     url = f"http://localhost:{PORT}"
     print("=" * 60)
