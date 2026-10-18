@@ -175,31 +175,117 @@
       font-weight: 600;
     }
 
-    /* BANNIERE DEMO */
-    .banner-offline {
-      background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(99, 102, 241, 0.15));
-      border: 1px solid rgba(217, 119, 6, 0.35);
-      border-radius: 12px;
-      padding: 0.85rem 1.25rem;
-      display: flex;
+    .local-switch-btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-      font-size: 0.88rem;
-    }
-    .banner-offline strong { color: #f59e0b; }
-    .banner-btn {
-      background: #0284c7;
+      gap: 0.45rem;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
       color: #fff;
       padding: 0.4rem 0.85rem;
       border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    }
+    .local-switch-btn:hover {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+    }
+
+    /* BANNIERE MODE WEB / LOCAL */
+    .banner-offline {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+    .banner-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-width: 820px;
+    }
+    .banner-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.98rem;
+      color: #f8fafc;
+    }
+    .banner-title strong { color: #38bdf8; }
+    .banner-badge {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+    }
+    .banner-desc {
+      font-size: 0.84rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+    .banner-desc code {
+      background: #1e293b;
+      color: #f59e0b;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 600;
+    }
+    .banner-buttons {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .banner-btn-direct {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.86rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .banner-btn-direct:hover {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      transform: translateY(-1px);
+    }
+    .banner-btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
       text-decoration: none;
       font-weight: 600;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
       transition: all 0.15s;
     }
-    .banner-btn:hover { background: #0369a1; }
+    .banner-btn-secondary:hover {
+      background: #334155;
+      color: #fff;
+    }
 
     main {
       max-width: 1550px;
@@ -1041,9 +1127,16 @@
         </a>
       </div>
 
-      <div class="server-status-pill" id="statusPill" onclick="toggleConfigModal()" title="Cliquer pour configurer l'URL de connexion locale">
-        <span class="dot offline" id="statusDot"></span>
-        <span id="statusText">Vérification de YggDex Local...</span>
+      <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+        <div class="server-status-pill" id="statusPill" onclick="toggleConfigModal()" title="Cliquer pour configurer l'URL de connexion locale">
+          <span class="dot offline" id="statusDot"></span>
+          <span id="statusText">Mode Web (1 400 Torrents)</span>
+        </div>
+
+        <a href="http://localhost:7777" class="local-switch-btn" title="Ouvrir la base complète sur votre PC">
+          <span>🚀</span>
+          <span>Base Complète Localhost (1,22M)</span>
+        </a>
       </div>
 
       <div class="header-right">
@@ -1075,11 +1168,24 @@
   </header>
 
   <main>
-    <div class="banner-offline" id="bannerOffline" style="display: none;">
-      <div>
-        <strong>Mode Démo Web actif :</strong> Vous explorez la sélection de démonstration. Pour interroger l'intégralité des <strong>1 218 387 torrents</strong> en local :
+    <div class="banner-offline" id="bannerOffline">
+      <div class="banner-info">
+        <div class="banner-title">
+          <span>🌐</span> <strong>Catalogue Web & Vitrine Démo</strong>
+          <span class="banner-badge">1 400 Top Torrents</span>
+        </div>
+        <div class="banner-desc">
+          Ce site GitHub Pages est un catalogue web vitrine. Pour rechercher en direct dans les <strong>1 218 387 torrents (6.02 Po)</strong>, lancez <code>Lancer_YggDex.bat</code> sur votre PC puis cliquez ci-contre.
+        </div>
       </div>
-      <a href="https://github.com/je-tu-il/YggDex" class="banner-btn" target="_blank">📥 Télécharger YggDex (Base complète incluse)</a>
+      <div class="banner-buttons">
+        <a href="http://localhost:7777" class="banner-btn-direct" title="Accéder à la base locale complète">
+          🚀 Ouvrir la Base Complète (1,22M)
+        </a>
+        <a href="https://github.com/je-tu-il/YggDex" target="_blank" class="banner-btn-secondary" title="Dépôt GitHub et base de données">
+          📦 Code & Base GitHub
+        </a>
+      </div>
     </div>
 
     <div class="search-section">
@@ -1265,9 +1371,13 @@
       const text = document.getElementById('statusText');
       const banner = document.getElementById('bannerOffline');
 
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        localApiUrl = window.location.origin;
+      }
+
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
         const res = await fetch(`${localApiUrl}/api/stats`, { signal: controller.signal });
         clearTimeout(timeoutId);
         
@@ -1276,16 +1386,16 @@
           isLocalConnected = true;
           dot.classList.remove('offline');
           text.innerHTML = `🟢 Base Locale Connectée (<strong>${Number(data.total_torrents).toLocaleString('fr-FR')}</strong>)`;
-          banner.style.display = 'none';
+          if (banner) banner.style.display = 'none';
           return;
         }
       } catch (e) {}
 
-      // Fallback mode démo
+      // Fallback catalogue web
       isLocalConnected = false;
       dot.classList.add('offline');
-      text.innerHTML = `🟡 Mode Démo Web`;
-      banner.style.display = 'flex';
+      text.innerHTML = `🌐 Mode Catalogue Web (1 400 Top Torrents)`;
+      if (banner) banner.style.display = 'flex';
 
       try {
         const resDemo = await fetch('demo_torrents.json');
@@ -1371,7 +1481,7 @@
 
       currentResults = filtered;
       currentResults.forEach(t => loadedTorrentsMap.set(t.id, t));
-      countEl.textContent = `${filtered.length} torrents (Mode Démo Web)`;
+      countEl.textContent = `${filtered.length} torrents (Catalogue Web)`;
       renderResults(filtered);
     }
 
@@ -1424,12 +1534,29 @@
       container.innerHTML = '';
 
       if (results.length === 0) {
-        container.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: #94a3b8;">
-            <h3>Aucun torrent trouvé</h3>
-            <p style="margin-top: 0.5rem;">Modifiez vos critères de recherche.</p>
-          </div>
-        `;
+        if (!isLocalConnected) {
+          container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1.5rem; color: #94a3b8;">
+              <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔍</div>
+              <h3 style="color: #f8fafc; font-size: 1.3rem;">Aucun torrent trouvé dans le catalogue Web</h3>
+              <p style="margin-top: 0.6rem; color: #94a3b8; max-width: 550px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+                Le catalogue web en ligne regroupe une sélection de 1 400 torrents populaires. Votre recherche se trouve très probablement dans l'archive complète des <strong>1 218 387 torrents</strong> !
+              </p>
+              <div style="margin-top: 1.5rem;">
+                <a href="http://localhost:7777" class="banner-btn-direct" style="display: inline-flex; font-size: 0.95rem; padding: 0.7rem 1.4rem;">
+                  🚀 Chercher dans la Base Complète (1 218 387 torrents)
+                </a>
+              </div>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: #94a3b8;">
+              <h3>Aucun torrent trouvé</h3>
+              <p style="margin-top: 0.5rem;">Modifiez vos critères de recherche.</p>
+            </div>
+          `;
+        }
         return;
       }
 
