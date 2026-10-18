@@ -19,7 +19,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import socketserver
 import webbrowser
 
-PORT = 7777
+PORT = int(os.environ.get("PORT", 7777))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(SCRIPT_DIR, "ygg_torrents.db")
 HTML_FILE = os.path.join(SCRIPT_DIR, "index.html")

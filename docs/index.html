@@ -1338,6 +1338,35 @@
     </div>
   </div>
 
+  <!-- MODAL DE CONFIGURATION DE CONNEXION DISTANTE (ZROK / LOCAL) -->
+  <div id="configModal" class="modal-backdrop" onclick="toggleConfigModal(false)">
+    <div class="modal-dialog" style="max-width: 520px; padding: 1.5rem;" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="color: #38bdf8; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>⚙️</span> Connexion Base Distante / zrok
+        </h3>
+        <button class="modal-close-btn" style="position: static; font-size: 1.5rem;" onclick="toggleConfigModal(false)">&times;</button>
+      </div>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.45;">
+        Par défaut, cette page consulte le catalogue web démo. Pour la connecter à l'intégralité des <strong>1,22 million de torrents</strong> depuis l'extérieur, indiquez l'adresse de votre tunnel <strong>zrok</strong> (ex: <code>https://xxxx.share.zrok.io</code>) ou votre serveur local.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <label style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1;">URL de l'API YggDex :</label>
+        <input 
+          type="text" 
+          id="configApiUrl" 
+          class="search-input" 
+          style="padding: 0.6rem 0.85rem; font-size: 0.9rem;" 
+          placeholder="https://xxxx.share.zrok.io ou http://localhost:7777" 
+        />
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
+          <button class="btn" style="background: #334155; color: #fff;" onclick="resetConfigUrl()">Réinitialiser</button>
+          <button class="btn btn-studio" onclick="saveConfigUrl()">Tester & Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast">Message</div>
 
   <script>
@@ -2056,6 +2085,40 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function toggleConfigModal(show = true) {
+      const modal = document.getElementById('configModal');
+      if (modal) {
+        modal.classList.toggle('active', show);
+        if (show) {
+          document.getElementById('configApiUrl').value = localStorage.getItem('yggdex_api_url') || '';
+        }
+      }
+    }
+
+    async function saveConfigUrl() {
+      const url = document.getElementById('configApiUrl').value.trim().replace(/\/+$/, '');
+      if (url) {
+        localStorage.setItem('yggdex_api_url', url);
+        localApiUrl = url;
+      } else {
+        localStorage.removeItem('yggdex_api_url');
+        localApiUrl = 'http://localhost:7777';
+      }
+      toggleConfigModal(false);
+      showToast("Test de connexion en cours...");
+      await checkLocalConnection();
+      triggerSearch(1);
+    }
+
+    function resetConfigUrl() {
+      localStorage.removeItem('yggdex_api_url');
+      document.getElementById('configApiUrl').value = '';
+      localApiUrl = 'http://localhost:7777';
+      toggleConfigModal(false);
+      checkLocalConnection();
+      triggerSearch(1);
     }
 
     window.addEventListener('DOMContentLoaded', init);
