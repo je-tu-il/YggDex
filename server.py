@@ -15,6 +15,7 @@ import datetime
 import subprocess
 import urllib.request
 import urllib.parse
+import mimetypes
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import socketserver
 import webbrowser
@@ -66,6 +67,75 @@ def format_date(timestamp):
         return datetime.datetime.fromtimestamp(timestamp).strftime('%d/%m/%Y %H:%M')
     except Exception:
         return "Inconnue"
+
+MEDIA_EXTENSIONS = ('.mp4', '.mkv', '.avi', '.mov', '.webm', '.m4v', '.ts', '.mp3', '.flac', '.m4a', '.ogg')
+
+def find_best_media_file(directory):
+    best_file = None
+    best_size = 0
+    if not os.path.exists(directory):
+        return None
+    for root, _, files in os.walk(directory):
+        for f in files:
+            if f.lower().endswith(MEDIA_EXTENSIONS):
+                fp = os.path.join(root, f)
+                try:
+                    sz = os.path.getsize(fp)
+                    if sz > best_size:
+                        best_size = sz
+                        best_file = fp
+                except Exception:
+                    pass
+    return best_file
+
+def find_torrent_file(name="", target_path="", hash_info=""):
+    user_dl = os.path.expanduser(r"~\Downloads")
+    studio_dl = os.path.join(TORRENT_STUDIO_DIR, "downloads")
+    search_dirs = [user_dl, studio_dl]
+
+    # 1. Chemin direct
+    if target_path and os.path.exists(target_path):
+        if os.path.isfile(target_path):
+            return target_path
+        elif os.path.isdir(target_path):
+            best = find_best_media_file(target_path)
+            if best:
+                return best
+
+    # 2. Recherche par nom direct dans Downloads
+    if name:
+        for base in search_dirs:
+            if not os.path.exists(base):
+                continue
+            cand = os.path.join(base, name)
+            if os.path.exists(cand):
+                if os.path.isfile(cand):
+                    return cand
+                elif os.path.isdir(cand):
+                    best = find_best_media_file(cand)
+                    if best:
+                        return best
+
+        # 3. Recherche floue / partielle
+        clean_target = re.sub(r'[^a-zA-Z0-9]', '', name).lower()
+        if len(clean_target) >= 5:
+            for base in search_dirs:
+                if not os.path.exists(base):
+                    continue
+                try:
+                    for item in os.listdir(base):
+                        clean_item = re.sub(r'[^a-zA-Z0-9]', '', item).lower()
+                        if clean_target in clean_item or clean_item in clean_target:
+                            full_p = os.path.join(base, item)
+                            if os.path.isfile(full_p) and full_p.lower().endswith(MEDIA_EXTENSIONS):
+                                return full_p
+                            elif os.path.isdir(full_p):
+                                best = find_best_media_file(full_p)
+                                if best:
+                                    return best
+                except Exception:
+                    pass
+    return None
 
 def ensure_database_extracted():
     if os.path.exists(DB_FILE):
@@ -294,23 +364,7 @@ class SearchHandler(BaseHTTPRequestHandler):
             elif path == "/api/torrent-studio/file":
                 name = params.get("name", [""])[0]
                 target_path = params.get("path", [""])[0]
-                user_dl = os.path.expanduser(r"~\Downloads")
-                target_file = None
-
-                if target_path and os.path.exists(target_path) and os.path.isfile(target_path):
-                    target_file = target_path
-                elif name:
-                    cand = os.path.join(user_dl, name)
-                    if os.path.exists(cand) and os.path.isfile(cand):
-                        target_file = cand
-                    elif os.path.exists(cand) and os.path.isdir(cand):
-                        # Si dossier, chercher le premier gros fichier (vidéo/archive)
-                        for r, _, fls in os.walk(cand):
-                            for f in fls:
-                                target_file = os.path.join(r, f)
-                                break
-                            if target_file:
-                                break
+                target_file = find_torrent_file(name=name, target_path=target_path)
 
                 if target_file and os.path.isfile(target_file):
                     filename = os.path.basename(target_file)
@@ -326,6 +380,178 @@ class SearchHandler(BaseHTTPRequestHandler):
                             self.wfile.write(chunk)
                 else:
                     self.send_error(404, "Fichier introuvable dans les Téléchargements")
+                return
+
+            elif path == "/api/stream/start":
+                magnet = params.get("magnet", [""])[0].strip()
+                name = params.get("name", [""])[0].strip()
+                target_path = params.get("path", [""])[0].strip()
+                hash_info = params.get("hash", [""])[0].strip()
+
+                target_file = find_torrent_file(name=name, target_path=target_path, hash_info=hash_info)
+                if target_file and os.path.exists(target_file) and os.path.getsize(target_file) > 1024 * 512:
+                    self.send_json({
+                        "ready": True,
+                        "status": "ready",
+                        "name": os.path.basename(target_file),
+                        "path": target_file,
+                        "size": os.path.getsize(target_file),
+                        "size_formatted": format_size(os.path.getsize(target_file)),
+                        "stream_url": f"/api/stream/video?path={urllib.parse.quote(target_file)}"
+                    })
+                    return
+
+                if magnet:
+                    ensure_studio_running()
+                    try:
+                        user_dl = os.path.expanduser(r"~\Downloads")
+                        payload = json.dumps({
+                            "magnet": magnet,
+                            "save_path": user_dl
+                        }).encode("utf-8")
+                        req = urllib.request.Request(
+                            f"{TORRENT_STUDIO_API}/api/torrents/add-magnet",
+                            data=payload,
+                            headers={"Content-Type": "application/json"}
+                        )
+                        urllib.request.urlopen(req, timeout=4)
+                    except Exception:
+                        pass
+
+                self.send_json({
+                    "ready": False,
+                    "status": "buffering",
+                    "name": name,
+                    "message": "Démarrage du téléchargement séquentiel dans Torrent Studio..."
+                })
+                return
+
+            elif path == "/api/stream/status":
+                name = params.get("name", [""])[0].strip()
+                target_path = params.get("path", [""])[0].strip()
+                hash_info = params.get("hash", [""])[0].strip()
+
+                target_file = find_torrent_file(name=name, target_path=target_path, hash_info=hash_info)
+                if target_file and os.path.exists(target_file) and os.path.getsize(target_file) > 1024 * 1024:
+                    self.send_json({
+                        "ready": True,
+                        "status": "ready",
+                        "name": os.path.basename(target_file),
+                        "path": target_file,
+                        "size": os.path.getsize(target_file),
+                        "size_formatted": format_size(os.path.getsize(target_file)),
+                        "stream_url": f"/api/stream/video?path={urllib.parse.quote(target_file)}"
+                    })
+                    return
+
+                studio_info = {}
+                if is_studio_alive():
+                    try:
+                        req = urllib.request.urlopen(f"{TORRENT_STUDIO_API}/api/torrents", timeout=2)
+                        data = json.loads(req.read().decode("utf-8"))
+                        for t in data.get("torrents", []):
+                            if (hash_info and hash_info.lower() in t.get("hash", "").lower()) or (name and name.lower() in t.get("name", "").lower()):
+                                studio_info = t
+                                break
+                    except Exception:
+                        pass
+
+                self.send_json({
+                    "ready": False,
+                    "status": "buffering",
+                    "name": name,
+                    "torrent": studio_info
+                })
+                return
+
+            elif path == "/api/stream/video":
+                name = params.get("name", [""])[0].strip()
+                target_path = params.get("path", [""])[0].strip()
+                hash_info = params.get("hash", [""])[0].strip()
+
+                target_file = find_torrent_file(name=name, target_path=target_path, hash_info=hash_info)
+                if not target_file or not os.path.exists(target_file):
+                    self.send_error(404, "Fichier vidéo non encore disponible pour le streaming")
+                    return
+
+                file_size = os.path.getsize(target_file)
+                mime_type, _ = mimetypes.guess_type(target_file)
+                if not mime_type:
+                    ext = os.path.splitext(target_file)[1].lower()
+                    if ext in ('.mp4', '.m4v'):
+                        mime_type = 'video/mp4'
+                    elif ext in ('.webm',):
+                        mime_type = 'video/webm'
+                    elif ext in ('.mkv',):
+                        mime_type = 'video/mp4'
+                    elif ext in ('.mp3',):
+                        mime_type = 'audio/mpeg'
+                    else:
+                        mime_type = 'video/mp4'
+
+                range_header = self.headers.get("Range")
+                if range_header and range_header.startswith("bytes="):
+                    range_val = range_header[6:].strip()
+                    parts = range_val.split("-")
+                    start = int(parts[0]) if parts[0] else 0
+                    end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
+                    if end >= file_size:
+                        end = file_size - 1
+                    content_length = end - start + 1
+
+                    self.send_response(206)
+                    self.send_header("Content-Type", mime_type)
+                    self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+                    self.send_header("Content-Length", str(content_length))
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+
+                    with open(target_file, "rb") as f:
+                        f.seek(start)
+                        remaining = content_length
+                        chunk_size = 64 * 1024
+                        while remaining > 0:
+                            read_len = min(remaining, chunk_size)
+                            chunk = f.read(read_len)
+                            if not chunk:
+                                break
+                            try:
+                                self.wfile.write(chunk)
+                            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+                                break
+                            remaining -= len(chunk)
+                else:
+                    self.send_response(200)
+                    self.send_header("Content-Type", mime_type)
+                    self.send_header("Content-Length", str(file_size))
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+
+                    with open(target_file, "rb") as f:
+                        chunk_size = 64 * 1024
+                        while chunk := f.read(chunk_size):
+                            try:
+                                self.wfile.write(chunk)
+                            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+                                break
+                return
+
+            elif path == "/api/stream/open-external":
+                name = params.get("name", [""])[0].strip()
+                target_path = params.get("path", [""])[0].strip()
+                hash_info = params.get("hash", [""])[0].strip()
+
+                target_file = find_torrent_file(name=name, target_path=target_path, hash_info=hash_info)
+                if target_file and os.path.exists(target_file):
+                    try:
+                        os.startfile(target_file)
+                        self.send_json({"success": True, "path": target_file})
+                    except Exception as e:
+                        self.send_json({"error": str(e)}, status=500)
+                else:
+                    self.send_json({"error": "Fichier introuvable sur le disque"}, status=404)
                 return
 
             elif path == "/api/stats":

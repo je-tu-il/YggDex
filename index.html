@@ -500,6 +500,172 @@
       background: #334155;
       color: #fff;
     }
+    .btn-stream {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+    .btn-stream:hover {
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+      transform: translateY(-1px);
+    }
+    .btn-stream-lg {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff;
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-stream-lg:hover {
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(139, 92, 246, 0.6);
+    }
+    .btn-vlc {
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      color: #fff;
+      font-weight: 600;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+    .btn-vlc:hover {
+      background: linear-gradient(135deg, #c2410c, #ea580c);
+    }
+
+    /* MODAL DE STREAMING CINEMA */
+    .stream-dialog {
+      background: #0b0f19;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      max-width: 1060px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(124, 58, 237, 0.2);
+    }
+    .stream-header {
+      padding: 0.85rem 1.25rem;
+      background: #111827;
+      border-bottom: 1px solid #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .stream-title-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+      flex: 1;
+    }
+    .stream-live-badge {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      animation: pulseLive 2s infinite;
+    }
+    @keyframes pulseLive {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    .stream-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stream-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .stream-video-wrap {
+      position: relative;
+      background: #000;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stream-video-element {
+      width: 100%;
+      height: 100%;
+      max-height: 70vh;
+      outline: none;
+    }
+    .stream-buffering-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(11, 15, 25, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 1.5rem;
+    }
+    .stream-footer {
+      padding: 0.75rem 1.25rem;
+      background: #111827;
+      border-top: 1px solid #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .stream-info-chips {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+    .stream-chip {
+      background: #1e293b;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #334155;
+    }
+    .stream-footer-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .spinner-lg {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(139, 92, 246, 0.2);
+      border-top-color: #8b5cf6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
 
     /* MODE LISTE COMPACT */
     .results-list {
@@ -1495,9 +1661,14 @@
             </div>
             
             <div class="grid-actions">
-              <button class="btn btn-studio" onclick="event.stopPropagation(); sendToTorrentStudio('${t.magnet.replace(/'/g, "\\'")}', this)" title="Lancer directement dans Torrent Studio">
-                ⚡ Télécharger
-              </button>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <button class="btn btn-stream" onclick="event.stopPropagation(); startStreaming('${t.id}')" title="Regarder immédiatement en streaming">
+                  ▶️ Streamer
+                </button>
+                <button class="btn btn-studio" onclick="event.stopPropagation(); sendToTorrentStudio('${t.magnet.replace(/'/g, "\\'")}', this)" title="Lancer directement dans Torrent Studio">
+                  ⚡ Télécharger
+                </button>
+              </div>
 
               <div class="grid-actions-row">
                 <button class="btn btn-magnet" onclick="event.stopPropagation(); copyMagnet('${t.magnet.replace(/'/g, "\\'")}', this)" title="Copier le lien magnet">
@@ -1556,6 +1727,9 @@
           </div>
 
           <div class="list-actions">
+            <button class="btn btn-stream" onclick="event.stopPropagation(); startStreaming('${t.id}')" title="Regarder immédiatement en streaming">
+              ▶️ Streamer
+            </button>
             <button class="btn btn-studio" onclick="event.stopPropagation(); sendToTorrentStudio('${t.magnet.replace(/'/g, "\\'")}', this)">
               ⚡ Télécharger
             </button>
@@ -1995,6 +2169,9 @@
             </div>
           </div>
           <div class="source-actions">
+            <button class="btn btn-stream" onclick="event.stopPropagation(); startStreaming(${s.id})" title="Streamer cette version">
+              ▶️ Streamer
+            </button>
             <button class="btn btn-studio" onclick="event.stopPropagation(); sendToTorrentStudio('${s.magnet.replace(/'/g, "\\'")}', this)" title="Lancer dans Torrent Studio">
               ⚡ Studio
             </button>
@@ -2056,8 +2233,171 @@
       }
     }
 
+    let streamPollTimer = null;
+    let currentStreamingData = null;
+
+    async function startStreaming(torrentId) {
+      const t = loadedTorrentsMap.get(torrentId);
+      if (!t) return;
+      openStreamPlayerModal(t);
+    }
+
+    async function startStreamingModal() {
+      if (!currentModalTorrent) return;
+      openStreamPlayerModal(currentModalTorrent);
+    }
+
+    async function openStreamPlayerModal(torrent) {
+      currentStreamingData = torrent;
+      const modal = document.getElementById('streamModal');
+      const titleEl = document.getElementById('streamVideoTitle');
+      const player = document.getElementById('streamVideoPlayer');
+      const overlay = document.getElementById('streamBufferingOverlay');
+      const bufferTitle = document.getElementById('streamBufferStatusTitle');
+      const bufferDesc = document.getElementById('streamBufferStatusDesc');
+      const bufferProgWrap = document.getElementById('streamBufferProgressWrap');
+      const bufferProgBar = document.getElementById('streamBufferProgressBar');
+      const formatChip = document.getElementById('streamFileFormat');
+      const sizeChip = document.getElementById('streamFileSize');
+      const speedChip = document.getElementById('streamDownloadSpeed');
+
+      titleEl.textContent = torrent.name;
+      formatChip.textContent = `Format: ${torrent.category_name || 'Vidéo'}`;
+      sizeChip.textContent = `Taille: ${torrent.size_formatted || '-'}`;
+      speedChip.style.display = 'none';
+
+      player.pause();
+      player.removeAttribute('src');
+      player.load();
+
+      overlay.style.display = 'flex';
+      bufferTitle.textContent = "Recherche du média & Connexion...";
+      bufferDesc.textContent = "Vérification de la présence du fichier ou démarrage du téléchargement séquentiel...";
+      bufferProgWrap.style.display = 'none';
+
+      modal.classList.add('active');
+
+      try {
+        const p = new URLSearchParams({
+          magnet: torrent.magnet || '',
+          name: torrent.name || '',
+          hash: torrent.hash_info || ''
+        });
+
+        const res = await fetch(`/api/stream/start?${p.toString()}`);
+        const data = await res.json();
+
+        if (data.ready && data.stream_url) {
+          playStreamVideo(data.stream_url, data.name || torrent.name);
+          return;
+        }
+
+        bufferTitle.textContent = "Téléchargement séquentiel en cours...";
+        bufferDesc.textContent = "Connexion aux seeders BitTorrent via Torrent Studio. La lecture débutera dès les premières pièces reçues.";
+        bufferProgWrap.style.display = 'block';
+
+        if (streamPollTimer) clearInterval(streamPollTimer);
+        streamPollTimer = setInterval(() => pollStreamStatus(torrent), 1500);
+
+      } catch (err) {
+        bufferTitle.textContent = "Erreur de démarrage du stream";
+        bufferDesc.textContent = String(err);
+      }
+    }
+
+    async function pollStreamStatus(torrent) {
+      try {
+        const p = new URLSearchParams({
+          name: torrent.name || '',
+          hash: torrent.hash_info || ''
+        });
+        const res = await fetch(`/api/stream/status?${p.toString()}`);
+        const data = await res.json();
+
+        const bufferProgBar = document.getElementById('streamBufferProgressBar');
+        const speedChip = document.getElementById('streamDownloadSpeed');
+
+        if (data.torrent && data.torrent.download_rate) {
+          speedChip.style.display = 'inline-block';
+          speedChip.textContent = `⚡ ${(data.torrent.download_rate / 1024 / 1024).toFixed(2)} Mo/s (${data.torrent.num_peers || 0} pairs)`;
+          const pct = Math.min(100, Math.round((data.torrent.progress || 0) * 100));
+          bufferProgBar.style.width = `${pct}%`;
+        }
+
+        if (data.ready && data.stream_url) {
+          if (streamPollTimer) {
+            clearInterval(streamPollTimer);
+            streamPollTimer = null;
+          }
+          playStreamVideo(data.stream_url, data.name || torrent.name);
+        }
+      } catch (e) {}
+    }
+
+    function playStreamVideo(url, fileName) {
+      const player = document.getElementById('streamVideoPlayer');
+      const overlay = document.getElementById('streamBufferingOverlay');
+      const dlBtn = document.getElementById('streamDownloadFileBtn');
+      const formatChip = document.getElementById('streamFileFormat');
+
+      overlay.style.display = 'none';
+      player.src = url;
+      player.play().catch(e => {
+        console.log("Autoplay bloqué par le navigateur:", e);
+      });
+
+      if (dlBtn) {
+        dlBtn.href = url;
+        dlBtn.download = fileName;
+      }
+
+      const ext = fileName.split('.').pop().toUpperCase();
+      formatChip.textContent = `Format: ${ext}`;
+      showToast("🎬 Lecture streaming démarrée !");
+    }
+
+    async function openStreamInVlc() {
+      if (!currentStreamingData) return;
+      try {
+        const p = new URLSearchParams({
+          name: currentStreamingData.name || '',
+          hash: currentStreamingData.hash_info || ''
+        });
+        const res = await fetch(`/api/stream/open-external?${p.toString()}`);
+        const data = await res.json();
+        if (data.success) {
+          showToast("🍿 Ouvert dans votre lecteur vidéo PC !");
+        } else {
+          showToast("Fichier en cours de téléchargement...");
+        }
+      } catch (e) {
+        showToast("Impossible d'ouvrir le lecteur externe");
+      }
+    }
+
+    function closeStreamModal(e) {
+      if (e && e.target && e.target.closest('.stream-dialog') && !e.target.classList.contains('modal-close-btn')) {
+        return;
+      }
+      const modal = document.getElementById('streamModal');
+      const player = document.getElementById('streamVideoPlayer');
+      if (streamPollTimer) {
+        clearInterval(streamPollTimer);
+        streamPollTimer = null;
+      }
+      if (player) {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+      }
+      modal.classList.remove('active');
+    }
+
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeTorrentModal();
+      if (e.key === 'Escape') {
+        closeTorrentModal();
+        closeStreamModal();
+      }
     });
 
     window.addEventListener('DOMContentLoaded', init);
@@ -2084,6 +2424,9 @@
             </div>
 
             <div class="modal-download-actions">
+              <button id="modalStreamBtn" class="btn btn-stream-lg" onclick="startStreamingModal()">
+                <span>▶️</span> Regarder en Streaming
+              </button>
               <button id="modalStudioBtn" class="btn btn-studio" style="padding: 0.7rem; font-size: 0.9rem;" onclick="sendModalToStudio()">
                 <span>⚡</span> Lancer dans Torrent Studio
               </button>
@@ -2166,6 +2509,55 @@
           <div id="paneSimilar" style="display: none;">
             <div class="similar-grid" id="similarGrid"></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DU LECTEUR STREAMING VIDEO -->
+  <div id="streamModal" class="modal-backdrop" onclick="closeStreamModal(event)">
+    <div class="stream-dialog" onclick="event.stopPropagation()">
+      <div class="stream-header">
+        <div class="stream-title-area">
+          <span class="stream-live-badge">▶ STREAMING</span>
+          <h3 id="streamVideoTitle" class="stream-title">Titre de la vidéo</h3>
+        </div>
+        <div class="stream-header-actions">
+          <button class="btn btn-vlc" id="streamOpenExternalBtn" onclick="openStreamInVlc()" title="Ouvrir dans VLC ou votre lecteur vidéo par défaut">
+            🎬 Ouvrir dans Lecteur PC (VLC)
+          </button>
+          <button class="modal-close-btn" onclick="closeStreamModal()">&times;</button>
+        </div>
+      </div>
+
+      <div class="stream-video-wrap">
+        <!-- Overlay de buffering / connexion -->
+        <div id="streamBufferingOverlay" class="stream-buffering-overlay" style="display: none;">
+          <div class="spinner-lg"></div>
+          <h4 id="streamBufferStatusTitle" style="color: #fff; font-size: 1.15rem; margin-top: 1rem;">Connexion aux pairs BitTorrent...</h4>
+          <p id="streamBufferStatusDesc" style="color: #94a3b8; font-size: 0.85rem; max-width: 480px; text-align: center; margin-top: 0.5rem;">
+            Mise en mémoire tampon des premières secondes pour démarrer la lecture...
+          </p>
+          <div id="streamBufferProgressWrap" style="width: 240px; background: #1e293b; height: 6px; border-radius: 999px; margin-top: 1rem; overflow: hidden; display: none;">
+            <div id="streamBufferProgressBar" style="width: 0%; height: 100%; background: #8b5cf6; transition: width 0.3s;"></div>
+          </div>
+        </div>
+
+        <!-- Lecteur Vidéo HTML5 natif -->
+        <video id="streamVideoPlayer" controls autoplay preload="metadata" playsinline class="stream-video-element">
+          Votre navigateur ne supporte pas la balise vidéo HTML5.
+        </video>
+      </div>
+
+      <div class="stream-footer">
+        <div class="stream-info-chips">
+          <span class="stream-chip" id="streamFileFormat">Format: Auto</span>
+          <span class="stream-chip" id="streamFileSize">Taille: -</span>
+          <span class="stream-chip" id="streamDownloadSpeed" style="display: none;">Vitesse: -</span>
+        </div>
+        <div class="stream-footer-right">
+          <button class="btn btn-magnet" onclick="copyModalCurrentMagnet()">🧲 Magnet</button>
+          <a id="streamDownloadFileBtn" href="#" class="btn btn-torrent" target="_blank" download>📥 Fichier</a>
         </div>
       </div>
     </div>
