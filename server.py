@@ -25,10 +25,25 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(SCRIPT_DIR, "ygg_torrents.db")
 HTML_FILE = os.path.join(SCRIPT_DIR, "index.html")
 
-# Configuration de Torrent Studio
-TORRENT_STUDIO_DIR = r"E:\App\All\Media\App\Torrent_Studio"
+# Configuration de Torrent Studio (detection dynamique et configurable)
+def _find_torrent_studio():
+    env_dir = os.environ.get("TORRENT_STUDIO_DIR")
+    if env_dir and os.path.exists(env_dir):
+        return env_dir
+    candidates = [
+        os.path.join(os.path.dirname(SCRIPT_DIR), "Torrent-Studio"),
+        os.path.join(os.path.expanduser("~"), "TorrentStudio"),
+        r"E:\App\All\Media\App\Torrent_Studio",
+        r"C:\Program Files\TorrentStudio"
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return env_dir or r"E:\App\All\Media\App\Torrent_Studio"
+
+TORRENT_STUDIO_DIR = _find_torrent_studio()
 TORRENT_STUDIO_EXE = os.path.join(TORRENT_STUDIO_DIR, "TorrentStudio.exe")
-TORRENT_STUDIO_API = "http://127.0.0.1:5050"
+TORRENT_STUDIO_API = os.environ.get("TORRENT_STUDIO_API", "http://127.0.0.1:5050")
 
 def is_studio_alive():
     try:
