@@ -25,23 +25,20 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(SCRIPT_DIR, "ygg_torrents.db")
 HTML_FILE = os.path.join(SCRIPT_DIR, "index.html")
 
-# Configuration de Torrent Studio (detection dynamique et configurable)
-def _find_torrent_studio():
-    env_dir = os.environ.get("TORRENT_STUDIO_DIR")
-    if env_dir and os.path.exists(env_dir):
-        return env_dir
+# Configuration dynamique et découverte automatique de Torrent Studio
+def find_torrent_studio_dir():
     candidates = [
-        os.path.join(os.path.dirname(SCRIPT_DIR), "Torrent-Studio"),
-        os.path.join(os.path.expanduser("~"), "TorrentStudio"),
-        r"E:\App\All\Media\App\Torrent_Studio",
-        r"C:\Program Files\TorrentStudio"
+        os.environ.get("TORRENT_STUDIO_DIR"),
+        os.path.normpath(os.path.join(SCRIPT_DIR, "..", "..", "01_APPLICATIONS_DESKTOP", "Torrent-Studio")),
+        r"E:\Reste\PROJET_PERSO\01_APPLICATIONS_DESKTOP\Torrent-Studio",
+        r"E:\App\All\Media\App\Torrent_Studio"
     ]
     for c in candidates:
-        if os.path.exists(c):
+        if c and os.path.exists(c):
             return c
-    return env_dir or r"E:\App\All\Media\App\Torrent_Studio"
+    return r"E:\Reste\PROJET_PERSO\01_APPLICATIONS_DESKTOP\Torrent-Studio"
 
-TORRENT_STUDIO_DIR = _find_torrent_studio()
+TORRENT_STUDIO_DIR = find_torrent_studio_dir()
 TORRENT_STUDIO_EXE = os.path.join(TORRENT_STUDIO_DIR, "TorrentStudio.exe")
 TORRENT_STUDIO_API = os.environ.get("TORRENT_STUDIO_API", "http://127.0.0.1:5050")
 
