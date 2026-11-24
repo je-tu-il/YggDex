@@ -1234,6 +1234,18 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+  
+.results-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); }
+.header-content, .header-right, .filters-bar { gap: .625rem; }
+.grid-card-content { min-width: 0; }
+.pill, .view-btn { min-height: 42px; }
+.search-input { min-height: 48px; }
+:where(button, a, input, select):focus-visible { outline: 2px solid #a5d2ff; outline-offset: 3px; }
+@media (max-width: 650px) {
+  .header-right { flex-wrap: wrap; }
+  .results-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr)); }
+}
+
   </style>
 </head>
 <body>
