@@ -15,30 +15,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Prepare static files
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp studio.html _site/
+          [ -d fonts ] && cp -r fonts _site/ || true
+          [ -d docs ] && cp -r docs _site/ || true
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
   deploy:
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 📦 Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: 📁 Prepare static files
-        run: |
-          mkdir -p _site
-          cp index.html _site/
-          cp studio.html _site/
-          [ -d docs ] && cp -r docs _site/ || true
-
-      - name: 📤 Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: 🚀 Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
